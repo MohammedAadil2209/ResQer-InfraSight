@@ -6,9 +6,7 @@ import {
   Sliders, 
   TrendingUp, 
   Terminal, 
-  Play, 
   Activity,
-  Layers,
   ShieldAlert,
   Zap
 } from 'lucide-react';
@@ -18,7 +16,6 @@ interface HeaderProps {
   activeTab: 'console' | 'map' | 'risk_tuner' | 'predictive' | 'hardware';
   setActiveTab: (tab: 'console' | 'map' | 'risk_tuner' | 'predictive' | 'hardware') => void;
   roverState: RoverTelemetryState;
-  onLaunchExpoDemo: () => void;
   onSimulateBump: () => void;
 }
 
@@ -26,7 +23,6 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   roverState,
-  onLaunchExpoDemo,
   onSimulateBump,
 }) => {
   return (
@@ -69,19 +65,11 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onSimulateBump}
-            className="px-2.5 py-1 rounded-md bg-white hover:bg-[#ede4d3] text-stone-800 border border-[#dfceb8] shadow-2xs transition flex items-center gap-1 text-[11px] font-sans font-medium"
+            className="px-3 py-1.5 rounded-md bg-white hover:bg-[#ede4d3] text-stone-800 border border-[#dfceb8] shadow-2xs transition flex items-center gap-1.5 text-xs font-sans font-medium"
             title="Simulate hitting a pothole with MPU6050 vibration spike"
           >
-            <Zap className="w-3 h-3 text-red-600" />
+            <Zap className="w-3.5 h-3.5 text-red-600" />
             <span>Simulate Road Bump</span>
-          </button>
-
-          <button
-            onClick={onLaunchExpoDemo}
-            className="px-3.5 py-1 rounded-md bg-red-600 hover:bg-red-700 text-white font-sans font-bold shadow-xs transition flex items-center gap-1.5 text-xs animate-pulse"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span>🚀 Run Expo 10-Step Demo</span>
           </button>
         </div>
       </div>

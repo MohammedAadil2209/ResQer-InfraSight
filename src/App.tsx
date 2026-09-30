@@ -6,7 +6,6 @@ import { InfrastructureDNAViewer } from './components/InfrastructureDNAViewer';
 import { RiskEngineTuner } from './components/RiskEngineTuner';
 import { PredictiveAnalytics } from './components/PredictiveAnalytics';
 import { HardwareAndCodeHub } from './components/HardwareAndCodeHub';
-import { ExpoDemoModal } from './components/ExpoDemoModal';
 import { WorkOrderModal } from './components/WorkOrderModal';
 import { InfrastructureDNA, RoverTelemetryState, RiskWeights } from './types';
 import { INITIAL_DEFECTS } from './data/mockDefects';
@@ -17,7 +16,6 @@ export default function App() {
   const [defects, setDefects] = useState<InfrastructureDNA[]>(INITIAL_DEFECTS);
   const [selectedDefect, setSelectedDefect] = useState<InfrastructureDNA>(INITIAL_DEFECTS[0]);
   const [riskWeights, setRiskWeights] = useState<RiskWeights>(DEFAULT_WEIGHTS);
-  const [isExpoDemoOpen, setIsExpoDemoOpen] = useState<boolean>(false);
   const [workOrderDefect, setWorkOrderDefect] = useState<InfrastructureDNA | null>(null);
 
   // Live Rover Telemetry State
@@ -139,7 +137,6 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         roverState={roverState}
-        onLaunchExpoDemo={() => setIsExpoDemoOpen(true)}
         onSimulateBump={handleSimulateBump}
       />
 
@@ -199,16 +196,6 @@ export default function App() {
         {/* Tab 5: Hardware & Python AI Scripts Hub */}
         {activeTab === 'hardware' && <HardwareAndCodeHub />}
       </main>
-
-      {/* Expo Demo 10-Step Interactive Presentation Modal */}
-      <ExpoDemoModal
-        isOpen={isExpoDemoOpen}
-        onClose={() => setIsExpoDemoOpen(false)}
-        onCompleteDemo={(dna) => {
-          handleNewDefectMinted(dna);
-          setActiveTab('console');
-        }}
-      />
 
       {/* Municipal Work Order Printable Modal */}
       <WorkOrderModal

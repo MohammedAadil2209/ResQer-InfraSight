@@ -1,0 +1,6 @@
+{
+  "name": "ResQer InfraSight — Autonomous Rover & Infrastructure AI Engine",
+  "description": "Autonomous road defect detection system powered by YOLO AI, multi-sensor fusion (Camera, GPS, MPU6050, Ultrasonic), Infrastructure DNA indexing, dynamic risk engine, and live municipal maintenance dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

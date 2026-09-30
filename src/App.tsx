@@ -133,7 +133,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-black">
+    <div className="min-h-screen bg-[#fbf9f5] text-stone-900 flex flex-col font-sans selection:bg-red-600 selection:text-white">
       {/* Top Header & Telemetry Bar */}
       <Header
         activeTab={activeTab}
@@ -220,11 +220,11 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-4 px-6 text-center text-xs font-mono text-slate-500">
+      <footer className="border-t border-[#dfceb8] bg-[#f5f0e5] py-4 px-6 text-center text-xs font-mono text-stone-600">
         <div className="flex flex-wrap items-center justify-between gap-3 max-w-7xl mx-auto">
-          <span>ResQer InfraSight • Project Expo 2026</span>
+          <span className="font-bold text-stone-900">RESQER INFRASIGHT • PROJECT EXPO 2026</span>
           <span>Sensor Fusion: Camera (YOLOv11) + MPU6050 + GPS Neo-6M + HC-SR04</span>
-          <span className="text-amber-400 font-bold">Autonomous Municipal Infrastructure Digital Twin</span>
+          <span className="text-red-700 font-bold">Autonomous Municipal Infrastructure Digital Twin</span>
         </div>
       </footer>
     </div>

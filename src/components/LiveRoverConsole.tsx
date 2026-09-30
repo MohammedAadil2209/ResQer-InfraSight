@@ -5,7 +5,6 @@ import {
   Upload, 
   Sparkles, 
   Activity, 
-  Maximize2, 
   Layers, 
   Dna, 
   Radio, 
@@ -13,8 +12,7 @@ import {
   Check, 
   Compass,
   Zap,
-  Info,
-  MapPin
+  Info
 } from 'lucide-react';
 import { InfrastructureDNA, RoverTelemetryState, DefectType } from '../types';
 import { SAMPLE_TEST_IMAGES } from '../data/mockDefects';
@@ -36,7 +34,6 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
   const [isInferring, setIsInferring] = useState<boolean>(false);
   const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(true);
   const [showOpticalHeatmap, setShowOpticalHeatmap] = useState<boolean>(false);
-  const [confidenceThreshold, setConfidenceThreshold] = useState<number>(0.25);
   const [mintNotification, setMintNotification] = useState<string | null>(null);
 
   // MPU6050 Waveform History
@@ -62,14 +59,13 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      className: 'dark-map-tiles',
       subdomains: 'abc',
     }).addTo(miniMap);
 
     const roverIconHtml = `
       <div class="relative flex items-center justify-center">
-        <div class="absolute w-6 h-6 rounded-full bg-cyan-400/40 animate-ping"></div>
-        <div class="relative w-5 h-5 rounded-full bg-slate-950 border-2 border-cyan-400 flex items-center justify-center text-[10px]">
+        <div class="absolute w-6 h-6 rounded-full bg-red-600/40 animate-ping"></div>
+        <div class="relative w-5 h-5 rounded-full bg-white border-2 border-red-600 flex items-center justify-center text-[10px] shadow-sm">
           🚗
         </div>
       </div>
@@ -124,8 +120,11 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
     const height = canvas.height;
     ctx.clearRect(0, 0, width, height);
 
-    // Draw Grid
-    ctx.strokeStyle = '#1e293b';
+    // Background Grid
+    ctx.fillStyle = '#1c1917';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = '#292524';
     ctx.lineWidth = 1;
     for (let x = 0; x < width; x += 25) {
       ctx.beginPath();
@@ -142,7 +141,7 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
 
     // Baseline (1.0G)
     const baselineY = height * 0.65;
-    ctx.strokeStyle = '#334155';
+    ctx.strokeStyle = '#44403c';
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.moveTo(0, baselineY);
@@ -153,12 +152,11 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
     // Draw Z-Axis Acceleration Waveform
     if (waveformHistory.length > 1) {
       ctx.lineWidth = 2.5;
-      ctx.strokeStyle = roverState.current_mpu.az > 2.0 ? '#ef4444' : '#10b981';
+      ctx.strokeStyle = roverState.current_mpu.az > 2.0 ? '#dc2626' : '#16a34a';
       ctx.beginPath();
 
       const step = width / (waveformHistory.length - 1);
       waveformHistory.forEach((val, idx) => {
-        // Map 0G to 4G to canvas height
         const normalized = (val - 0.5) / 3.5;
         const y = height - (normalized * height * 0.85 + height * 0.1);
         const x = idx * step;
@@ -249,7 +247,7 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
     <div className="space-y-6">
       {/* Toast Notification */}
       {mintNotification && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-500 text-slate-950 px-4 py-2.5 rounded-xl font-bold font-mono text-xs shadow-2xl flex items-center gap-2 animate-in slide-in-from-bottom duration-300">
+        <div className="fixed bottom-6 right-6 z-50 bg-red-600 text-white px-4 py-2.5 rounded-xl font-bold font-mono text-xs shadow-2xl flex items-center gap-2 animate-in slide-in-from-bottom duration-300">
           <Check className="w-4 h-4" />
           <span>{mintNotification}</span>
         </div>
@@ -259,26 +257,26 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Visual AI Detection Feed (7 Cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div className="bg-white border border-[#dfceb8] rounded-2xl p-5 shadow-xs">
             {/* Camera View Header */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800 text-xs font-mono">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#dfceb8] text-xs font-mono">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
                 </span>
-                <span className="text-white font-bold">ROVER-CAM-01 [OPTICAL FEED]</span>
-                <span className="text-slate-500">|</span>
-                <span className="text-cyan-400">YOLOv11 Nano</span>
+                <span className="text-stone-900 font-bold">ROVER-CAM-01 [OPTICAL INGEST]</span>
+                <span className="text-stone-400">|</span>
+                <span className="text-red-700 font-bold">YOLOv11 Nano</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowBoundingBoxes(!showBoundingBoxes)}
-                  className={`px-2 py-1 rounded text-[11px] font-sans border transition ${
+                  className={`px-2.5 py-1 rounded text-[11px] font-sans border transition ${
                     showBoundingBoxes
-                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                      ? 'bg-red-50 text-red-700 border-red-300 font-bold'
+                      : 'bg-[#f5f0e5] text-stone-600 border-[#dfceb8]'
                   }`}
                 >
                   <Crosshair className="w-3 h-3 inline mr-1" />
@@ -287,20 +285,20 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
 
                 <button
                   onClick={() => setShowOpticalHeatmap(!showOpticalHeatmap)}
-                  className={`px-2 py-1 rounded text-[11px] font-sans border transition ${
+                  className={`px-2.5 py-1 rounded text-[11px] font-sans border transition ${
                     showOpticalHeatmap
-                      ? 'bg-purple-500/20 text-purple-400 border-purple-500/40'
-                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                      ? 'bg-amber-50 text-amber-800 border-amber-300 font-bold'
+                      : 'bg-[#f5f0e5] text-stone-600 border-[#dfceb8]'
                   }`}
                 >
                   <Layers className="w-3 h-3 inline mr-1" />
-                  Heatmap
+                  Contrast
                 </button>
               </div>
             </div>
 
             {/* Video / Image Screen */}
-            <div className="relative mt-3 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 aspect-video flex items-center justify-center group">
+            <div className="relative mt-3 rounded-xl overflow-hidden bg-stone-900 border border-[#dfceb8] aspect-video flex items-center justify-center group shadow-inner">
               <img
                 src={currentDisplayImage}
                 alt="Rover road feed"
@@ -309,13 +307,10 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
                 }`}
               />
 
-              {/* Grid Radar Scan Overlay */}
-              <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] opacity-15 pointer-events-none" />
-
               {/* Bounding Box Overlay */}
               {showBoundingBoxes && (
                 <div
-                  className="absolute border-2 border-red-500 bg-red-500/15 rounded shadow-lg transition-all duration-300"
+                  className="absolute border-2 border-red-600 bg-red-600/20 rounded shadow-lg transition-all duration-300"
                   style={{
                     left: `${selectedSample.box.x}%`,
                     top: `${selectedSample.box.y}%`,
@@ -324,9 +319,9 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
                   }}
                 >
                   {/* Bounding Box Tag */}
-                  <div className="absolute -top-7 left-0 px-2 py-0.5 bg-red-600/90 text-white font-mono text-[11px] font-bold rounded flex items-center gap-1.5 shadow backdrop-blur-sm whitespace-nowrap">
+                  <div className="absolute -top-7 left-0 px-2.5 py-0.5 bg-red-600 text-white font-mono text-[11px] font-bold rounded shadow-md whitespace-nowrap">
                     <span className="uppercase">{currentType.replace('_', ' ')}</span>
-                    <span className="text-amber-200 font-extrabold">
+                    <span className="ml-1.5 opacity-90">
                       {(currentConfidence * 100).toFixed(1)}%
                     </span>
                   </div>
@@ -334,25 +329,25 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
               )}
 
               {/* Telemetry HUD on Screen */}
-              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[11px] font-mono text-slate-300 bg-slate-950/75 px-3 py-1.5 rounded-lg border border-slate-800 backdrop-blur-sm">
+              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[11px] font-mono text-white bg-black/75 px-3 py-1.5 rounded-lg border border-white/20 backdrop-blur-md">
                 <div>LAT: {roverState.latitude.toFixed(4)}°N | LNG: {roverState.longitude.toFixed(4)}°E</div>
-                <div className="text-cyan-400 font-bold">{roverState.rover_speed_kmh.toFixed(1)} KM/H</div>
-                <div className="text-amber-400">INFERENCE: 18.2ms</div>
+                <div className="text-red-400 font-bold">{roverState.rover_speed_kmh.toFixed(1)} KM/H</div>
+                <div className="text-amber-300">INFERENCE: 18.2ms</div>
               </div>
 
               {/* Inferring Flash Overlay */}
               {isInferring && (
-                <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
-                  <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-mono text-amber-400">Running YOLOv11 Neural Inference...</span>
+                <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
+                  <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-mono text-white font-bold">Running YOLOv11 Neural Inference...</span>
                 </div>
               )}
             </div>
 
             {/* Test Image Selector Strip */}
-            <div className="mt-4 pt-3 border-t border-slate-800 space-y-2">
+            <div className="mt-4 pt-3 border-t border-[#dfceb8] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-400">SELECT ROAD TEST SAMPLE:</span>
+                <span className="text-xs font-mono font-bold text-stone-700">SELECT ROAD TEST SAMPLE:</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -362,10 +357,10 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium flex items-center gap-1 transition"
+                  className="px-2.5 py-1 rounded-md bg-[#f5f0e5] hover:bg-[#ede4d3] text-stone-800 border border-[#dfceb8] text-xs font-medium flex items-center gap-1 transition shadow-2xs"
                 >
-                  <Upload className="w-3 h-3 text-cyan-400" />
-                  <span>Upload Custom Road Photo</span>
+                  <Upload className="w-3 h-3 text-red-600" />
+                  <span>Upload Custom Photo</span>
                 </button>
               </div>
 
@@ -377,18 +372,18 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
                       setSelectedSample(sample);
                       setCustomImage(null);
                     }}
-                    className={`p-2 rounded-xl border text-left transition flex flex-col justify-between ${
+                    className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
                       selectedSample.id === sample.id && !customImage
-                        ? 'bg-amber-500/10 border-amber-500/60 ring-1 ring-amber-500/40'
-                        : 'bg-slate-950/60 border-slate-800 hover:bg-slate-800/50'
+                        ? 'bg-red-50/70 border-red-400 ring-2 ring-red-400/40 shadow-xs'
+                        : 'bg-[#fbf9f5] border-[#dfceb8] hover:bg-white'
                     }`}
                   >
-                    <div className="text-[11px] font-bold text-white truncate">
+                    <div className="text-[11px] font-bold text-stone-900 truncate">
                       {sample.type.replace('_', ' ').toUpperCase()}
                     </div>
-                    <div className="text-[10px] font-mono text-slate-400 flex items-center justify-between mt-1">
+                    <div className="text-[10px] font-mono text-stone-500 flex items-center justify-between mt-1.5">
                       <span>Conf: {(sample.expectedConfidence * 100).toFixed(0)}%</span>
-                      <span className={sample.severity === 'CRITICAL' ? 'text-red-400' : 'text-amber-400'}>
+                      <span className={sample.severity === 'CRITICAL' ? 'text-red-700 font-bold' : 'text-amber-700 font-bold'}>
                         {sample.severity}
                       </span>
                     </div>
@@ -398,15 +393,15 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
             </div>
 
             {/* Action Bar */}
-            <div className="mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <Info className="w-4 h-4 text-cyan-400" />
+            <div className="mt-4 pt-3 border-t border-[#dfceb8] flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-stone-600">
+                <Info className="w-4 h-4 text-red-600" />
                 <span>Camera + IMU Sensor Fusion validated</span>
               </div>
 
               <button
                 onClick={handleMintDNA}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition active:scale-95"
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition active:scale-95"
               >
                 <Dna className="w-4 h-4" />
                 <span>Synthesize Infrastructure DNA & Dispatch</span>
@@ -418,33 +413,33 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
         {/* Right Column: Multi-Sensor Fusion & MPU6050 Oscilloscope (5 Cols) */}
         <div className="lg:col-span-5 space-y-4">
           {/* MPU6050 Oscilloscope */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+          <div className="bg-white border border-[#dfceb8] rounded-2xl p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-amber-400" />
-                <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                <Activity className="w-4 h-4 text-red-600" />
+                <h3 className="text-xs font-mono font-bold text-stone-900 uppercase tracking-wider">
                   MPU6050 6-DOF INERTIAL TELEMETRY
                 </h3>
               </div>
               <button
                 onClick={onSimulateBump}
-                className="px-2 py-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-[10px] font-mono font-bold transition flex items-center gap-1"
+                className="px-2 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-300 text-[10px] font-mono font-bold transition flex items-center gap-1 shadow-2xs"
               >
-                <Zap className="w-3 h-3 text-red-400" />
-                <span>Simulate Bump Spike</span>
+                <Zap className="w-3 h-3 text-red-600" />
+                <span>Simulate Spike</span>
               </button>
             </div>
 
             {/* Oscilloscope Canvas */}
-            <div className="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
+            <div className="relative rounded-xl overflow-hidden bg-stone-900 border border-stone-800 shadow-inner">
               <canvas
                 ref={canvasRef}
                 width={360}
                 height={120}
                 className="w-full h-28 block"
               />
-              <div className="absolute top-2 left-2 text-[10px] font-mono text-slate-400">
-                Z-Acc Peak: <strong className={roverState.current_mpu.az > 2.0 ? "text-red-400" : "text-emerald-400"}>
+              <div className="absolute top-2 left-2 text-[10px] font-mono text-stone-300">
+                Z-Acc Peak: <strong className={roverState.current_mpu.az > 2.0 ? "text-red-400 font-bold" : "text-emerald-400"}>
                   {roverState.current_mpu.az.toFixed(2)} G
                 </strong>
               </div>
@@ -457,89 +452,91 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
 
             {/* 3-Axis Readout Badges */}
             <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
-              <div className="p-2 rounded-lg bg-slate-950 border border-slate-800">
-                <span className="text-slate-500 block text-[10px]">ACCEL X</span>
-                <span className="text-slate-200 font-bold">{roverState.current_mpu.ax.toFixed(2)}G</span>
+              <div className="p-2 rounded-lg bg-[#f5f0e5] border border-[#dfceb8]">
+                <span className="text-stone-500 block text-[10px]">ACCEL X</span>
+                <span className="text-stone-900 font-bold">{roverState.current_mpu.ax.toFixed(2)}G</span>
               </div>
-              <div className="p-2 rounded-lg bg-slate-950 border border-slate-800">
-                <span className="text-slate-500 block text-[10px]">ACCEL Y</span>
-                <span className="text-slate-200 font-bold">{roverState.current_mpu.ay.toFixed(2)}G</span>
+              <div className="p-2 rounded-lg bg-[#f5f0e5] border border-[#dfceb8]">
+                <span className="text-stone-500 block text-[10px]">ACCEL Y</span>
+                <span className="text-stone-900 font-bold">{roverState.current_mpu.ay.toFixed(2)}G</span>
               </div>
-              <div className="p-2 rounded-lg bg-slate-950 border border-slate-800">
-                <span className="text-slate-500 block text-[10px]">ACCEL Z</span>
-                <span className={`font-bold ${roverState.current_mpu.az > 2.0 ? 'text-red-400' : 'text-emerald-400'}`}>
+              <div className="p-2 rounded-lg bg-[#f5f0e5] border border-[#dfceb8]">
+                <span className="text-stone-500 block text-[10px]">ACCEL Z</span>
+                <span className={`font-bold ${roverState.current_mpu.az > 2.0 ? 'text-red-700' : 'text-emerald-700'}`}>
                   {roverState.current_mpu.az.toFixed(2)}G
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Ultrasonic Cavity Depth & Physical Dimensions */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+          {/* Ultrasonic Cavity Depth & Dimensions */}
+          <div className="bg-white border border-[#dfceb8] rounded-2xl p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-slate-400 flex items-center gap-1.5">
-                <Radio className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-stone-700 font-bold flex items-center gap-1.5">
+                <Radio className="w-3.5 h-3.5 text-red-600" />
                 HC-SR04 ULTRASONIC CAVITY PROFILER
               </span>
-              <span className="text-cyan-400 font-bold">{selectedSample.bumpProfile.depth_cm} CM</span>
+              <span className="text-red-700 font-black">{selectedSample.bumpProfile.depth_cm} CM</span>
             </div>
 
             {/* Depth Level Indicator */}
             <div className="space-y-1">
-              <div className="h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 p-0.5">
+              <div className="h-3 bg-[#ede4d3] rounded-full overflow-hidden border border-[#dfceb8] p-0.5">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-amber-500 rounded-full transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-amber-500 to-red-600 rounded-full transition-all duration-300"
                   style={{ width: `${Math.min(100, (selectedSample.bumpProfile.depth_cm / 20) * 100)}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[10px] font-mono text-slate-500">
+              <div className="flex justify-between text-[10px] font-mono text-stone-500">
                 <span>0 cm (Flush Surface)</span>
                 <span>Sub-base Threshold (5 cm)</span>
                 <span>Critical Depr (20 cm)</span>
               </div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-[#fbf9f5] border border-[#dfceb8] text-xs font-mono text-stone-700 flex items-center justify-between">
               <span>Estimated Dimensions:</span>
-              <span className="text-amber-400 font-bold">64cm (L) × 48cm (W) × {selectedSample.bumpProfile.depth_cm}cm (D)</span>
+              <span className="text-red-700 font-bold">64cm (L) × 48cm (W) × {selectedSample.bumpProfile.depth_cm}cm (D)</span>
             </div>
           </div>
 
           {/* GPS & Rover Navigation Status with Leaflet Mini-Map */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3 text-xs font-mono">
+          <div className="bg-white border border-[#dfceb8] rounded-2xl p-4 shadow-xs space-y-3 text-xs font-mono">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400 flex items-center gap-1.5">
-                <Compass className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-stone-700 font-bold flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-red-600" />
                 NEO-6M GPS & LIVE LEAFLET RADAR
               </span>
-              <span className="text-emerald-400 font-bold">FIX: 3D DGPS</span>
+              <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                FIX: 3D DGPS
+              </span>
             </div>
 
             {/* Live Leaflet Mini-Map Container */}
-            <div className="relative rounded-xl overflow-hidden border border-slate-800 h-28 bg-slate-950 shadow-inner">
+            <div className="relative rounded-xl overflow-hidden border border-[#dfceb8] h-28 bg-[#f5f0e5] shadow-inner">
               <div ref={miniMapRef} className="w-full h-full" />
-              <div className="absolute top-1.5 left-2 z-[400] px-1.5 py-0.5 rounded bg-slate-950/80 backdrop-blur-sm text-[9px] text-cyan-300 border border-slate-800">
+              <div className="absolute top-1.5 left-2 z-[400] px-1.5 py-0.5 rounded bg-white/90 backdrop-blur-xs text-[9px] text-stone-800 border border-[#dfceb8] font-bold">
                 LIVE GPS TRACE
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="p-2 bg-slate-950 rounded-lg border border-slate-800">
-                <div className="text-[10px] text-slate-500">COORDINATES</div>
-                <div className="text-slate-200 font-bold">{roverState.latitude.toFixed(6)}°N</div>
-                <div className="text-slate-200 font-bold">{roverState.longitude.toFixed(6)}°E</div>
+              <div className="p-2 bg-[#fbf9f5] rounded-lg border border-[#dfceb8]">
+                <div className="text-[10px] text-stone-500">COORDINATES</div>
+                <div className="text-stone-900 font-bold">{roverState.latitude.toFixed(6)}°N</div>
+                <div className="text-stone-900 font-bold">{roverState.longitude.toFixed(6)}°E</div>
               </div>
-              <div className="p-2 bg-slate-950 rounded-lg border border-slate-800">
-                <div className="text-[10px] text-slate-500">SECTOR / ZONE</div>
-                <div className="text-amber-300 font-bold">Guindy Ind. 03</div>
-                <div className="text-slate-400 text-[10px]">Chennai Highways Div</div>
+              <div className="p-2 bg-[#fbf9f5] rounded-lg border border-[#dfceb8]">
+                <div className="text-[10px] text-stone-500">SECTOR / ZONE</div>
+                <div className="text-stone-900 font-bold">Guindy Ind. 03</div>
+                <div className="text-stone-500 text-[10px]">Chennai Highways Div</div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px] text-slate-400">
-              <span>BATTERY: <strong className="text-emerald-400">{roverState.battery_pct}%</strong></span>
-              <span>HEADING: <strong className="text-white">{roverState.heading_deg}° NE</strong></span>
-              <span>SATELLITES: <strong className="text-cyan-400">{roverState.gps_satellites}</strong></span>
+            <div className="flex items-center justify-between pt-1 border-t border-[#ede4d3] text-[11px] text-stone-600">
+              <span>BATTERY: <strong className="text-emerald-700">{roverState.battery_pct}%</strong></span>
+              <span>HEADING: <strong className="text-stone-900">{roverState.heading_deg}° NE</strong></span>
+              <span>SATELLITES: <strong className="text-stone-900">{roverState.gps_satellites}</strong></span>
             </div>
           </div>
         </div>

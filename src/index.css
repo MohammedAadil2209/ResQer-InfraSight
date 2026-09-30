@@ -1,52 +1,65 @@
 @import "tailwindcss";
 
-/* Leaflet dark theme adjustments & custom marker pins */
+@theme {
+  --color-beige-50: #fbf9f5;
+  --color-beige-100: #f5f0e5;
+  --color-beige-200: #ede4d3;
+  --color-beige-300: #dfceb8;
+  --color-beige-400: #ccb598;
+}
+
+/* Explicit fallback utility classes to ensure 100% theme fidelity */
+.bg-beige-50 { background-color: #fbf9f5; }
+.bg-beige-100 { background-color: #f5f0e5; }
+.bg-beige-200 { background-color: #ede4d3; }
+.bg-beige-300 { background-color: #dfceb8; }
+.border-beige-200 { border-color: #ede4d3; }
+.border-beige-300 { border-color: #dfceb8; }
+.text-beige-400 { color: #ccb598; }
+
+/* Leaflet map styles matching RESQER theme */
 .leaflet-container {
-  background-color: #020617 !important;
+  background-color: #f5f0e5 !important;
   font-family: inherit;
   z-index: 10;
 }
 
-/* 100% Free, NO-API-KEY Dark Mode Filter for OpenStreetMap */
-.dark-map-tiles .leaflet-tile {
-  filter: invert(100%) hue-rotate(180deg) brightness(80%) contrast(110%) saturate(60%);
-}
-
+/* ResQer Tactical Leaflet Popup */
 .leaflet-popup-content-wrapper {
-  background: #0f172a !important;
-  color: #f8fafc !important;
-  border: 1px solid #334155;
-  border-radius: 12px !important;
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5) !important;
+  background: #ffffff !important;
+  color: #1c1917 !important;
+  border: 1px solid #dfceb8 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 25px -5px rgba(28, 25, 23, 0.12), 0 8px 10px -6px rgba(28, 25, 23, 0.08) !important;
 }
 
 .leaflet-popup-tip {
-  background: #0f172a !important;
-  border: 1px solid #334155;
+  background: #ffffff !important;
+  border: 1px solid #dfceb8 !important;
 }
 
 .leaflet-popup-content {
-  margin: 10px 12px !important;
+  margin: 12px 14px !important;
   line-height: 1.4 !important;
 }
 
 .leaflet-bar {
-  border: 1px solid #334155 !important;
+  border: 1px solid #dfceb8 !important;
   border-radius: 8px !important;
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5) !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08) !important;
 }
 
 .leaflet-bar a {
-  background-color: #0f172a !important;
-  color: #94a3b8 !important;
-  border-bottom: 1px solid #1e293b !important;
+  background-color: #ffffff !important;
+  color: #44403c !important;
+  border-bottom: 1px solid #ede4d3 !important;
   transition: all 0.2s ease;
 }
 
 .leaflet-bar a:hover {
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
+  background-color: #f5f0e5 !important;
+  color: #1c1917 !important;
 }
 
 .custom-defect-pin,
@@ -55,23 +68,28 @@
   border: none;
 }
 
-/* Custom scrollbars for telemetry feeds */
+/* Optional Dark Map Inversion Filter */
+.dark-map-tiles .leaflet-tile {
+  filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(105%) saturate(70%);
+}
+
+/* Custom scrollbars in ResQer Warm Stone Theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #f5f0e5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #dfceb8;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #ccb598;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -81,4 +99,3 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-

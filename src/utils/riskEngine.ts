@@ -59,39 +59,39 @@ export function getSeverityColor(severity: SeverityLevel): {
   switch (severity) {
     case 'CRITICAL':
       return {
-        badge: 'bg-red-500/20 text-red-400 border-red-500/40',
-        bg: 'bg-red-950/40',
-        border: 'border-red-500/50',
-        text: 'text-red-400',
-        dot: 'bg-red-500',
-        hex: '#ef4444',
+        badge: 'bg-red-50 text-red-700 border-red-300 font-bold',
+        bg: 'bg-red-50/80',
+        border: 'border-red-300',
+        text: 'text-red-700',
+        dot: 'bg-red-600',
+        hex: '#dc2626',
       };
     case 'HIGH':
       return {
-        badge: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
-        bg: 'bg-amber-950/40',
-        border: 'border-amber-500/50',
-        text: 'text-amber-400',
-        dot: 'bg-amber-500',
-        hex: '#f59e0b',
+        badge: 'bg-amber-50 text-amber-800 border-amber-300 font-bold',
+        bg: 'bg-amber-50/80',
+        border: 'border-amber-300',
+        text: 'text-amber-800',
+        dot: 'bg-amber-600',
+        hex: '#d97706',
       };
     case 'MEDIUM':
       return {
-        badge: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
-        bg: 'bg-yellow-950/40',
-        border: 'border-yellow-500/50',
-        text: 'text-yellow-300',
-        dot: 'bg-yellow-400',
-        hex: '#eab308',
+        badge: 'bg-yellow-50 text-yellow-800 border-yellow-300 font-bold',
+        bg: 'bg-yellow-50/80',
+        border: 'border-yellow-300',
+        text: 'text-yellow-800',
+        dot: 'bg-yellow-600',
+        hex: '#ca8a04',
       };
     case 'LOW':
       return {
-        badge: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
-        bg: 'bg-emerald-950/40',
-        border: 'border-emerald-500/50',
-        text: 'text-emerald-400',
-        dot: 'bg-emerald-500',
-        hex: '#10b981',
+        badge: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold',
+        bg: 'bg-emerald-50/80',
+        border: 'border-emerald-300',
+        text: 'text-emerald-800',
+        dot: 'bg-emerald-600',
+        hex: '#16a34a',
       };
   }
 }

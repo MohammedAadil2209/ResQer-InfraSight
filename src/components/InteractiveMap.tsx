@@ -8,9 +8,7 @@ import {
   Clock,
   Navigation,
   Maximize2,
-  Eye,
-  Radio,
-  Sparkles
+  AlertTriangle
 } from 'lucide-react';
 import { InfrastructureDNA } from '../types';
 import { getSeverityColor } from '../utils/riskEngine';
@@ -22,7 +20,7 @@ interface InteractiveMapProps {
   roverLocation: { lat: number; lng: number };
 }
 
-type MapTileStyle = 'dark' | 'satellite' | 'streets';
+type MapTileStyle = 'streets' | 'dark' | 'satellite';
 
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   defects,
@@ -40,7 +38,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
-  const [tileStyle, setTileStyle] = useState<MapTileStyle>('dark');
+  const [tileStyle, setTileStyle] = useState<MapTileStyle>('streets');
   const [showHeatmapCircles, setShowHeatmapCircles] = useState<boolean>(true);
   const [roverTrail, setRoverTrail] = useState<[number, number][]>([
     [12.9230, 80.0980],
@@ -84,18 +82,18 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           className: '',
           attribution: '&copy; Esri World Imagery | ResQer InfraSight',
         };
-      case 'streets':
-        return {
-          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          className: '',
-          attribution: '&copy; OpenStreetMap contributors',
-        };
       case 'dark':
-      default:
         return {
           url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           className: 'dark-map-tiles',
           attribution: '&copy; OpenStreetMap | ResQer InfraSight',
+        };
+      case 'streets':
+      default:
+        return {
+          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          className: '',
+          attribution: '&copy; OpenStreetMap contributors | ResQer',
         };
     }
   };
@@ -112,7 +110,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       zoomControl: true,
     });
 
-    const config = getTileConfig('dark');
+    const config = getTileConfig('streets');
     const tileLayer = L.tileLayer(config.url, {
       attribution: config.attribution,
       className: config.className,
@@ -126,9 +124,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     heatmapLayerRef.current = heatLayer;
 
     const trail = L.polyline([], {
-      color: '#38bdf8',
+      color: '#dc2626',
       weight: 3,
-      opacity: 0.8,
+      opacity: 0.85,
       dashArray: '4, 8',
     }).addTo(map);
     pathPolylineRef.current = trail;
@@ -186,8 +184,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     // 1. Draw Rover Marker with Leaflet divIcon
     const roverIconHtml = `
       <div class="relative flex items-center justify-center">
-        <div class="absolute w-8 h-8 rounded-full bg-cyan-400/40 animate-ping"></div>
-        <div class="relative w-7 h-7 rounded-full bg-slate-950 border-2 border-cyan-400 flex items-center justify-center shadow-lg text-xs shadow-cyan-500/50">
+        <div class="absolute w-8 h-8 rounded-full bg-red-600/30 animate-ping"></div>
+        <div class="relative w-7 h-7 rounded-full bg-white border-2 border-red-600 flex items-center justify-center shadow-md text-xs">
           🚗
         </div>
       </div>
@@ -201,12 +199,12 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     const rMarker = L.marker([roverLocation.lat, roverLocation.lng], { icon: roverIcon })
       .bindPopup(`
-        <div style="font-family: monospace; font-size: 11px; color: #f8fafc;">
-          <div style="font-weight: bold; color: #38bdf8; margin-bottom: 2px;">🚗 RESQER ROVER-01 (ACTIVE)</div>
+        <div style="font-family: monospace; font-size: 11px; color: #1c1917;">
+          <div style="font-weight: bold; color: #dc2626; margin-bottom: 2px;">🚗 RESQER ROVER-01 (ACTIVE)</div>
           <div>Lat: ${roverLocation.lat.toFixed(6)}° N</div>
           <div>Lng: ${roverLocation.lng.toFixed(6)}° E</div>
           <div>Speed: 18.5 km/h | Mode: Autonomous Patrol</div>
-          <div style="margin-top: 4px; color: #94a3b8; font-size: 10px;">Sector: Guindy Industrial Link, Chennai</div>
+          <div style="margin-top: 4px; color: #78716c; font-size: 10px;">Sector: Guindy Industrial Link, Chennai</div>
         </div>
       `)
       .addTo(markersGroup);
@@ -217,7 +215,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       const color = getSeverityColor(defect.severity);
       const isSelected = selectedDefect?.defect_id === defect.defect_id;
       const isResolved = defect.status === 'RESOLVED';
-      const pinColor = isResolved ? '#10b981' : color.hex;
+      const pinColor = isResolved ? '#16a34a' : color.hex;
 
       // Draw Heatmap Zone circle
       if (showHeatmapCircles && !isResolved) {
@@ -227,15 +225,15 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           color: pinColor,
           fillColor: pinColor,
           fillOpacity: defect.severity === 'CRITICAL' ? 0.22 : 0.12,
-          weight: 1,
+          weight: 1.5,
         }).addTo(heatGroup);
       }
 
       // Pin Marker
       const markerHtml = `
         <div class="relative flex items-center justify-center cursor-pointer transition-transform hover:scale-125">
-          ${defect.severity === 'CRITICAL' && !isResolved ? `<div class="absolute w-8 h-8 rounded-full bg-red-500/50 animate-ping"></div>` : ''}
-          <div style="background-color: ${pinColor}; box-shadow: 0 0 12px ${pinColor}99;" class="w-6 h-6 rounded-full border-2 ${isSelected ? 'border-white ring-4 ring-amber-400/80 scale-125' : 'border-slate-900'} flex items-center justify-center text-[10px] font-black text-slate-950 font-mono">
+          ${defect.severity === 'CRITICAL' && !isResolved ? `<div class="absolute w-8 h-8 rounded-full bg-red-600/40 animate-ping"></div>` : ''}
+          <div style="background-color: ${pinColor}; box-shadow: 0 2px 8px ${pinColor}66;" class="w-6 h-6 rounded-full border-2 ${isSelected ? 'border-stone-900 ring-3 ring-red-500 scale-125' : 'border-white'} flex items-center justify-center text-[10px] font-black text-white font-mono shadow-sm">
             ${defect.type === 'pothole' ? 'P' : defect.type === 'open_manhole' ? 'M' : defect.type === 'road_crack' ? 'C' : '•'}
           </div>
         </div>
@@ -251,10 +249,10 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       const marker = L.marker([defect.latitude, defect.longitude], { icon: customIcon });
 
       const popupHtml = `
-        <div style="min-width: 200px; font-family: monospace; font-size: 11px; color: #f8fafc;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 4px; margin-bottom: 6px;">
-            <strong style="color: #f1f5f9; font-size: 12px;">${defect.defect_id}</strong>
-            <span style="background: ${pinColor}33; color: ${pinColor}; border: 1px solid ${pinColor}88; padding: 1px 6px; border-radius: 4px; font-weight: bold; font-size: 10px;">
+        <div style="min-width: 200px; font-family: monospace; font-size: 11px; color: #1c1917;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dfceb8; padding-bottom: 4px; margin-bottom: 6px;">
+            <strong style="color: #1c1917; font-size: 12px;">${defect.defect_id}</strong>
+            <span style="background: ${pinColor}18; color: ${pinColor}; border: 1px solid ${pinColor}55; padding: 1px 6px; border-radius: 4px; font-weight: bold; font-size: 10px;">
               ${defect.severity}
             </span>
           </div>
@@ -262,7 +260,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           <div><strong>Risk Score:</strong> <span style="font-weight: bold; color: ${pinColor}; font-size: 13px;">${defect.risk_score} / 100</span></div>
           <div><strong>Cavity Depth:</strong> ${defect.dimensions.depth_cm} cm</div>
           <div><strong>AI Confidence:</strong> ${(defect.confidence * 100).toFixed(1)}%</div>
-          <div style="font-size: 10px; color: #94a3b8; margin-top: 5px; border-top: 1px solid #1e293b; pt: 3px;">${defect.location_name}</div>
+          <div style="font-size: 10px; color: #78716c; margin-top: 5px; border-top: 1px solid #ede4d3; padding-top: 3px;">${defect.location_name}</div>
         </div>
       `;
 
@@ -307,66 +305,66 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     <div className="space-y-4">
       {/* 4 Overview Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 shadow-md flex items-center justify-between">
+        <div className="bg-white border border-[#dfceb8] rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-slate-400 font-medium">TOTAL DEFECTS</div>
-            <div className="text-2xl font-black text-white mt-0.5">{totalCount.toLocaleString()}</div>
-            <div className="text-[10px] text-slate-500 mt-1">Autonomous rover coverage</div>
+            <div className="text-[11px] text-stone-500 font-medium">TOTAL DEFECTS</div>
+            <div className="text-2xl font-black text-stone-900 mt-0.5">{totalCount.toLocaleString()}</div>
+            <div className="text-[10px] text-stone-400 mt-1">Autonomous rover coverage</div>
           </div>
-          <div className="p-2.5 rounded-lg bg-slate-800 text-slate-300">
-            <Layers className="w-5 h-5 text-slate-400" />
+          <div className="p-2.5 rounded-lg bg-[#f5f0e5] text-stone-700">
+            <Layers className="w-5 h-5 text-stone-600" />
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-red-500/30 rounded-xl p-3.5 shadow-md flex items-center justify-between bg-gradient-to-br from-red-950/20 to-transparent">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-red-400 font-medium">CRITICAL RISK</div>
-            <div className="text-2xl font-black text-red-400 mt-0.5">{criticalCount}</div>
-            <div className="text-[10px] text-red-300/70 mt-1">&gt; 80 Risk Index • 4h SLA</div>
+            <div className="text-[11px] text-red-700 font-bold">CRITICAL RISK</div>
+            <div className="text-2xl font-black text-red-700 mt-0.5">{criticalCount}</div>
+            <div className="text-[10px] text-red-600 mt-1">&gt; 80 Risk Index • 4h SLA</div>
           </div>
-          <div className="p-2.5 rounded-lg bg-red-500/20 text-red-400">
+          <div className="p-2.5 rounded-lg bg-red-100 text-red-700">
             <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
             </span>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-amber-500/30 rounded-xl p-3.5 shadow-md flex items-center justify-between bg-gradient-to-br from-amber-950/20 to-transparent">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-amber-400 font-medium">HIGH PRIORITY</div>
-            <div className="text-2xl font-black text-amber-400 mt-0.5">{highCount}</div>
-            <div className="text-[10px] text-amber-300/70 mt-1">61–80 Risk • 48h SLA</div>
+            <div className="text-[11px] text-amber-800 font-bold">HIGH PRIORITY</div>
+            <div className="text-2xl font-black text-amber-800 mt-0.5">{highCount}</div>
+            <div className="text-[10px] text-amber-700 mt-1">61–80 Risk • 48h SLA</div>
           </div>
-          <div className="p-2.5 rounded-lg bg-amber-500/20 text-amber-400">
-            <Clock className="w-5 h-5 text-amber-400" />
+          <div className="p-2.5 rounded-lg bg-amber-100 text-amber-800">
+            <Clock className="w-5 h-5 text-amber-700" />
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3.5 shadow-md flex items-center justify-between bg-gradient-to-br from-emerald-950/20 to-transparent">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-emerald-400 font-medium">RESOLVED</div>
-            <div className="text-2xl font-black text-emerald-400 mt-0.5">{resolvedCount}</div>
-            <div className="text-[10px] text-emerald-300/70 mt-1">Patched & Verified</div>
+            <div className="text-[11px] text-emerald-800 font-bold">RESOLVED</div>
+            <div className="text-2xl font-black text-emerald-800 mt-0.5">{resolvedCount}</div>
+            <div className="text-[10px] text-emerald-700 mt-1">Patched & Verified</div>
           </div>
-          <div className="p-2.5 rounded-lg bg-emerald-500/20 text-emerald-400">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+          <div className="p-2.5 rounded-lg bg-emerald-100 text-emerald-800">
+            <CheckCircle2 className="w-5 h-5 text-emerald-700" />
           </div>
         </div>
       </div>
 
       {/* Filter and Leaflet Map Toolbar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-white border border-[#dfceb8] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-slate-400 font-mono text-[11px]">DEFECT CLASS:</span>
+          <span className="text-stone-500 font-mono text-[11px]">DEFECT CLASS:</span>
           {['ALL', 'pothole', 'open_manhole', 'road_crack', 'waterlogging'].map((t) => (
             <button
               key={t}
               onClick={() => setTypeFilter(t)}
               className={`px-2.5 py-1 rounded-lg font-mono text-[11px] transition ${
                 typeFilter === t
-                  ? 'bg-amber-500 text-slate-950 font-bold'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-red-600 text-white font-bold shadow-xs'
+                  : 'bg-[#f5f0e5] text-stone-700 border border-[#dfceb8] hover:bg-[#ede4d3]'
               }`}
             >
               {t === 'ALL' ? 'ALL CLASSES' : t.replace('_', ' ').toUpperCase()}
@@ -375,31 +373,31 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-slate-400 font-mono text-[11px]">LEAFLET TILES:</span>
-          <div className="flex items-center bg-slate-950 p-0.5 rounded-lg border border-slate-800 font-mono text-[11px]">
+          <span className="text-stone-500 font-mono text-[11px]">MAP TILES:</span>
+          <div className="flex items-center bg-[#f5f0e5] p-0.5 rounded-lg border border-[#dfceb8] font-mono text-[11px]">
             <button
-              onClick={() => setTileStyle('dark')}
+              onClick={() => setTileStyle('streets')}
               className={`px-2 py-0.5 rounded transition ${
-                tileStyle === 'dark' ? 'bg-slate-800 text-amber-400 font-bold' : 'text-slate-400 hover:text-white'
+                tileStyle === 'streets' ? 'bg-white text-stone-900 font-bold shadow-2xs border border-[#dfceb8]' : 'text-stone-600 hover:text-stone-900'
               }`}
             >
-              Dark Matter
+              OSM Streets
             </button>
             <button
               onClick={() => setTileStyle('satellite')}
               className={`px-2 py-0.5 rounded transition ${
-                tileStyle === 'satellite' ? 'bg-slate-800 text-cyan-400 font-bold' : 'text-slate-400 hover:text-white'
+                tileStyle === 'satellite' ? 'bg-white text-red-600 font-bold shadow-2xs border border-[#dfceb8]' : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               Satellite
             </button>
             <button
-              onClick={() => setTileStyle('streets')}
+              onClick={() => setTileStyle('dark')}
               className={`px-2 py-0.5 rounded transition ${
-                tileStyle === 'streets' ? 'bg-slate-800 text-emerald-400 font-bold' : 'text-slate-400 hover:text-white'
+                tileStyle === 'dark' ? 'bg-stone-900 text-white font-bold shadow-2xs' : 'text-stone-600 hover:text-stone-900'
               }`}
             >
-              OSM Streets
+              Dark Mode
             </button>
           </div>
 
@@ -407,11 +405,11 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             onClick={() => setShowHeatmapCircles(!showHeatmapCircles)}
             className={`px-2.5 py-1 rounded-lg font-mono text-[11px] border transition ${
               showHeatmapCircles
-                ? 'bg-red-500/20 text-red-400 border-red-500/40'
-                : 'bg-slate-800 text-slate-400 border-slate-700'
+                ? 'bg-red-50 text-red-700 border-red-300 font-bold'
+                : 'bg-[#f5f0e5] text-stone-600 border-[#dfceb8]'
             }`}
           >
-            Hazard Zones {showHeatmapCircles ? 'ON' : 'OFF'}
+            Hazard Radii {showHeatmapCircles ? 'ON' : 'OFF'}
           </button>
         </div>
       </div>
@@ -419,32 +417,32 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       {/* Main Map + Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Leaflet Map (8 Cols) */}
-        <div className="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative">
+        <div className="lg:col-span-8 bg-white border border-[#dfceb8] rounded-2xl overflow-hidden shadow-sm relative">
           {/* Map Header Overlay */}
-          <div className="absolute top-3 left-3 z-[400] bg-slate-950/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-xs font-mono flex items-center gap-3 text-slate-200 shadow-xl">
+          <div className="absolute top-3 left-3 z-[400] bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl border border-[#dfceb8] text-xs font-mono flex items-center gap-3 text-stone-800 shadow-md">
             <span className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
-              <strong className="text-white">LEAFLET GIS RADAR</strong>
+              <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+              <strong className="text-stone-900 font-mono">LEAFLET RADAR</strong>
             </span>
-            <span className="text-slate-600">|</span>
-            <span className="text-amber-400">Chennai Metropolitan Network</span>
-            <span className="text-slate-600">|</span>
-            <span className="text-cyan-300">{filteredDefects.length} Defect Pins</span>
+            <span className="text-stone-300">|</span>
+            <span className="text-stone-600 font-bold">Chennai Metropolitan Network</span>
+            <span className="text-stone-300">|</span>
+            <span className="text-red-600 font-bold">{filteredDefects.length} Pins</span>
           </div>
 
           {/* Quick Map Action Controls (Center on Rover, Fit Bounds) */}
-          <div className="absolute top-3 right-3 z-[400] flex items-center gap-1.5 bg-slate-950/90 backdrop-blur-md p-1 rounded-xl border border-slate-800 shadow-xl font-mono text-[11px]">
+          <div className="absolute top-3 right-3 z-[400] flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1 rounded-xl border border-[#dfceb8] shadow-md font-mono text-[11px]">
             <button
               onClick={handleCenterOnRover}
-              className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition flex items-center gap-1"
+              className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition flex items-center gap-1 font-bold"
               title="Center map on live Rover position"
             >
-              <Navigation className="w-3.5 h-3.5" />
+              <Navigation className="w-3.5 h-3.5 text-red-600" />
               <span>Center Rover</span>
             </button>
             <button
               onClick={handleFitAllDefects}
-              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1"
+              className="px-2.5 py-1 rounded-lg bg-[#f5f0e5] hover:bg-[#ede4d3] text-stone-700 transition flex items-center gap-1 border border-[#dfceb8]"
               title="Fit all markers in view"
             >
               <Maximize2 className="w-3.5 h-3.5" />
@@ -453,42 +451,42 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           </div>
 
           {/* Legend Overlay */}
-          <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/90 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 text-[10px] font-mono flex items-center gap-3 text-slate-300 shadow-xl flex-wrap">
+          <div className="absolute bottom-3 left-3 z-[400] bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-[#dfceb8] text-[10px] font-mono flex items-center gap-3 text-stone-700 shadow-md flex-wrap">
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-              <span>Critical (81–100)</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-red-600"></span>
+              <span className="font-bold text-red-700">Critical (81–100)</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-              <span>High (61–80)</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+              <span className="font-bold text-amber-800">High (61–80)</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
               <span>Medium (31–60)</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
               <span>Resolved</span>
             </div>
-            <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
-              <span className="w-2.5 h-0.5 bg-cyan-400"></span>
+            <div className="flex items-center gap-1 border-l border-[#dfceb8] pl-2">
+              <span className="w-3 h-0.5 bg-red-600"></span>
               <span>Rover Trail</span>
             </div>
           </div>
 
           {/* Leaflet Map Div */}
-          <div ref={mapContainerRef} className="w-full h-[540px] bg-slate-950" />
+          <div ref={mapContainerRef} className="w-full h-[540px] bg-[#f5f0e5]" />
         </div>
 
         {/* Selected Defect DNA Feed (4 Cols) */}
         <div className="lg:col-span-4 space-y-3 flex flex-col h-[540px]">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-xs font-mono">
-              <span className="text-white font-bold flex items-center gap-1.5">
-                <Dna className="w-4 h-4 text-pink-400" />
+          <div className="bg-white border border-[#dfceb8] rounded-2xl p-4 flex-1 flex flex-col overflow-hidden shadow-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-[#dfceb8] text-xs font-mono">
+              <span className="text-stone-900 font-bold flex items-center gap-1.5">
+                <Dna className="w-4 h-4 text-red-600" />
                 INFRASTRUCTURE DNA FEED
               </span>
-              <span className="text-slate-400">{filteredDefects.length} ACTIVE</span>
+              <span className="text-stone-500">{filteredDefects.length} ACTIVE</span>
             </div>
 
             <div className="overflow-y-auto space-y-2.5 my-2 pr-1 flex-1">
@@ -501,30 +499,30 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     onClick={() => onSelectDefect(defect)}
                     className={`w-full text-left p-3 rounded-xl border transition flex flex-col gap-2 ${
                       isSelected
-                        ? 'bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/50'
-                        : 'bg-slate-950/60 border-slate-800 hover:bg-slate-800/40'
+                        ? 'bg-red-50/70 border-red-400 ring-2 ring-red-400/40 shadow-xs'
+                        : 'bg-[#fbf9f5] border-[#dfceb8] hover:bg-white'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-xs text-white">
+                      <span className="font-mono font-bold text-xs text-stone-900">
                         {defect.defect_id}
                       </span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${color.badge}`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${color.badge}`}>
                         {defect.severity}
                       </span>
                     </div>
 
-                    <div className="text-xs font-semibold text-slate-200 capitalize">
+                    <div className="text-xs font-bold text-stone-800 capitalize">
                       {defect.type.replace('_', ' ')}
                     </div>
 
-                    <div className="text-[11px] text-slate-400 line-clamp-1">
+                    <div className="text-[11px] text-stone-600 line-clamp-1">
                       {defect.location_name}
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-800/60">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-stone-500 pt-1 border-t border-[#ede4d3]">
                       <span>Conf: {(defect.confidence * 100).toFixed(1)}%</span>
-                      <span className="font-bold text-amber-400">Risk: {defect.risk_score}/100</span>
+                      <span className="font-bold text-red-600">Risk: {defect.risk_score}/100</span>
                       <span>{defect.dimensions.depth_cm}cm depth</span>
                     </div>
                   </button>

@@ -3,18 +3,11 @@ import {
   Terminal, 
   Copy, 
   Check, 
-  Cpu, 
   Download, 
-  ExternalLink, 
-  Sparkles, 
-  Layers, 
-  CheckCircle2,
-  FolderTree,
-  AlertCircle
+  CheckCircle2
 } from 'lucide-react';
 import { 
   PYTHON_DETECT_SCRIPT, 
-  PYTHON_TRAIN_SCRIPT, 
   ESP32_FIRMWARE_CODE, 
   PYTHON_BACKEND_SERVER, 
   WIRING_PINOUT_GUIDE 
@@ -70,21 +63,21 @@ python ai\\detection\\detect.py`;
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white border border-[#dfceb8] rounded-2xl p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600">
             <Terminal className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-stone-900">
                 Hardware, Firmware & Python AI Scripts
               </h2>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/20 text-purple-400 border border-purple-500/40">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-50 text-red-700 border border-red-300">
                 READY FOR PHYSICAL ROVER & EXPO DEMO
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-stone-500">
               Complete source code for Phase 1 (YOLO detection), Phase 2 (FastAPI backend), and Phase 5 (ESP32 Rover firmware).
             </p>
           </div>
@@ -92,11 +85,11 @@ python ai\\detection\\detect.py`;
       </div>
 
       {/* Code Navigation Tabs */}
-      <div className="flex items-center gap-1 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 text-xs font-mono overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-1 bg-[#ede4d3] p-1.5 rounded-xl border border-[#dfceb8] text-xs font-mono overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('powershell')}
           className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${
-            activeTab === 'powershell' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+            activeTab === 'powershell' ? 'bg-white text-stone-900 font-bold shadow-2xs border border-[#dfceb8]' : 'text-stone-600 hover:text-stone-900'
           }`}
         >
           1. PowerShell Setup Guide
@@ -105,7 +98,7 @@ python ai\\detection\\detect.py`;
         <button
           onClick={() => setActiveTab('detect_py')}
           className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${
-            activeTab === 'detect_py' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+            activeTab === 'detect_py' ? 'bg-white text-stone-900 font-bold shadow-2xs border border-[#dfceb8]' : 'text-stone-600 hover:text-stone-900'
           }`}
         >
           2. ai/detection/detect.py
@@ -114,7 +107,7 @@ python ai\\detection\\detect.py`;
         <button
           onClick={() => setActiveTab('esp32_ino')}
           className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${
-            activeTab === 'esp32_ino' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+            activeTab === 'esp32_ino' ? 'bg-white text-stone-900 font-bold shadow-2xs border border-[#dfceb8]' : 'text-stone-600 hover:text-stone-900'
           }`}
         >
           3. hardware/esp32_rover.ino
@@ -123,7 +116,7 @@ python ai\\detection\\detect.py`;
         <button
           onClick={() => setActiveTab('server_py')}
           className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${
-            activeTab === 'server_py' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+            activeTab === 'server_py' ? 'bg-white text-stone-900 font-bold shadow-2xs border border-[#dfceb8]' : 'text-stone-600 hover:text-stone-900'
           }`}
         >
           4. backend/server.py
@@ -132,7 +125,7 @@ python ai\\detection\\detect.py`;
         <button
           onClick={() => setActiveTab('wiring')}
           className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${
-            activeTab === 'wiring' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+            activeTab === 'wiring' ? 'bg-white text-stone-900 font-bold shadow-2xs border border-[#dfceb8]' : 'text-stone-600 hover:text-stone-900'
           }`}
         >
           5. Wiring Pinout & Schematic
@@ -142,32 +135,32 @@ python ai\\detection\\detect.py`;
       {/* Tab 1: PowerShell Terminal Guide */}
       {activeTab === 'powershell' && (
         <div className="space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div className="bg-white border border-[#dfceb8] rounded-2xl p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono font-bold text-white flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs font-mono font-bold text-stone-900 flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-red-600" />
                 WINDOWS POWERSHELL SETUP COMMANDS
               </span>
               <button
                 onClick={() => handleCopy(powerShellCommands, 'ps')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1.5 transition"
+                className="px-3 py-1.5 rounded-lg bg-[#f5f0e5] hover:bg-[#ede4d3] text-stone-800 border border-[#dfceb8] text-xs font-mono flex items-center gap-1.5 transition font-bold"
               >
-                {copiedKey === 'ps' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === 'ps' ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedKey === 'ps' ? 'Copied to Clipboard!' : 'Copy All Commands'}</span>
               </button>
             </div>
 
-            <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-300 leading-relaxed overflow-x-auto">
+            <pre className="p-4 rounded-xl bg-stone-900 border border-stone-800 text-xs font-mono text-amber-200 leading-relaxed overflow-x-auto shadow-inner">
               {powerShellCommands}
             </pre>
 
             {/* Expected Terminal Output preview */}
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-              <div className="text-[11px] font-mono font-bold text-emerald-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" />
+            <div className="p-4 rounded-xl bg-[#fbf9f5] border border-[#dfceb8] space-y-2">
+              <div className="text-[11px] font-mono font-bold text-emerald-800 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <span>EXPECTED VERIFICATION OUTPUT:</span>
               </div>
-              <pre className="text-xs font-mono text-slate-400 p-2 bg-slate-900 rounded border border-slate-800">
+              <pre className="text-xs font-mono text-stone-700 p-3 bg-white rounded border border-[#dfceb8]">
 {`Ultralytics YOLO 8.3+ Python-3.11.4 torch-2.1.0+cu121 CUDA:0 (NVIDIA RTX)
 Setup complete ✅ (8 CPUs, 16.0 GB RAM, 512 GB disk)
 YOLO OK
@@ -182,13 +175,13 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
 
       {/* Tab 2: detect.py */}
       {activeTab === 'detect_py' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div className="bg-white border border-[#dfceb8] rounded-2xl p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xs font-mono font-bold text-white block">
+              <span className="text-xs font-mono font-bold text-stone-900 block">
                 ai/detection/detect.py
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-stone-500">
                 Phase 1: Real-time YOLOv11 Road Defect Detector with Severity & BBox extraction
               </span>
             </div>
@@ -196,15 +189,15 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleCopy(PYTHON_DETECT_SCRIPT, 'detect')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1.5 transition"
+                className="px-3 py-1.5 rounded-lg bg-[#f5f0e5] hover:bg-[#ede4d3] text-stone-800 border border-[#dfceb8] text-xs font-mono flex items-center gap-1.5 transition font-bold"
               >
-                {copiedKey === 'detect' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === 'detect' ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedKey === 'detect' ? 'Copied!' : 'Copy Script'}</span>
               </button>
 
               <button
                 onClick={() => handleDownloadFile('detect.py', PYTHON_DETECT_SCRIPT)}
-                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-mono font-bold flex items-center gap-1.5 transition"
+                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-mono font-bold flex items-center gap-1.5 transition shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download .py</span>
@@ -212,7 +205,7 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
             </div>
           </div>
 
-          <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-emerald-300 leading-relaxed overflow-x-auto max-h-96">
+          <pre className="p-4 rounded-xl bg-stone-900 border border-stone-800 text-xs font-mono text-emerald-300 leading-relaxed overflow-x-auto max-h-96 shadow-inner">
             {PYTHON_DETECT_SCRIPT}
           </pre>
         </div>
@@ -220,13 +213,13 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
 
       {/* Tab 3: ESP32 Arduino Firmware */}
       {activeTab === 'esp32_ino' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div className="bg-white border border-[#dfceb8] rounded-2xl p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xs font-mono font-bold text-white block">
+              <span className="text-xs font-mono font-bold text-stone-900 block">
                 hardware/esp32_rover_firmware.ino
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-stone-500">
                 Phase 5: ESP32 + MPU6050 (I2C) + Neo-6M GPS (UART) + HC-SR04 + WiFi HTTP Telemetry
               </span>
             </div>
@@ -234,15 +227,15 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleCopy(ESP32_FIRMWARE_CODE, 'esp32')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1.5 transition"
+                className="px-3 py-1.5 rounded-lg bg-[#f5f0e5] hover:bg-[#ede4d3] text-stone-800 border border-[#dfceb8] text-xs font-mono flex items-center gap-1.5 transition font-bold"
               >
-                {copiedKey === 'esp32' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === 'esp32' ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedKey === 'esp32' ? 'Copied!' : 'Copy Firmware'}</span>
               </button>
 
               <button
                 onClick={() => handleDownloadFile('esp32_rover_firmware.ino', ESP32_FIRMWARE_CODE)}
-                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-mono font-bold flex items-center gap-1.5 transition"
+                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-mono font-bold flex items-center gap-1.5 transition shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download .ino</span>
@@ -250,7 +243,7 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
             </div>
           </div>
 
-          <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-amber-300 leading-relaxed overflow-x-auto max-h-96">
+          <pre className="p-4 rounded-xl bg-stone-900 border border-stone-800 text-xs font-mono text-amber-300 leading-relaxed overflow-x-auto max-h-96 shadow-inner">
             {ESP32_FIRMWARE_CODE}
           </pre>
         </div>
@@ -258,13 +251,13 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
 
       {/* Tab 4: Python Backend Server */}
       {activeTab === 'server_py' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div className="bg-white border border-[#dfceb8] rounded-2xl p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xs font-mono font-bold text-white block">
+              <span className="text-xs font-mono font-bold text-stone-900 block">
                 backend/server.py
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-stone-500">
                 Phase 2: FastAPI High-Speed Telemetry Ingestion & Sensor Fusion Hub
               </span>
             </div>
@@ -272,15 +265,15 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleCopy(PYTHON_BACKEND_SERVER, 'server')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1.5 transition"
+                className="px-3 py-1.5 rounded-lg bg-[#f5f0e5] hover:bg-[#ede4d3] text-stone-800 border border-[#dfceb8] text-xs font-mono flex items-center gap-1.5 transition font-bold"
               >
-                {copiedKey === 'server' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === 'server' ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedKey === 'server' ? 'Copied!' : 'Copy Server'}</span>
               </button>
 
               <button
                 onClick={() => handleDownloadFile('server.py', PYTHON_BACKEND_SERVER)}
-                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-mono font-bold flex items-center gap-1.5 transition"
+                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-mono font-bold flex items-center gap-1.5 transition shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download .py</span>
@@ -288,7 +281,7 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
             </div>
           </div>
 
-          <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-cyan-300 leading-relaxed overflow-x-auto max-h-96">
+          <pre className="p-4 rounded-xl bg-stone-900 border border-stone-800 text-xs font-mono text-cyan-300 leading-relaxed overflow-x-auto max-h-96 shadow-inner">
             {PYTHON_BACKEND_SERVER}
           </pre>
         </div>
@@ -296,17 +289,19 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
 
       {/* Tab 5: Hardware Wiring Pinout */}
       {activeTab === 'wiring' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <h3 className="text-sm font-mono font-bold text-white uppercase tracking-wider">
+        <div className="bg-white border border-[#dfceb8] rounded-2xl p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#dfceb8]">
+            <h3 className="text-sm font-mono font-bold text-stone-900 uppercase tracking-wider">
               ESP32 HARDWARE WIRING & PINOUT ARCHITECTURE
             </h3>
-            <span className="text-xs font-mono text-emerald-400">5V / 3.3V POWER RAILS</span>
+            <span className="text-xs font-mono text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              5V / 3.3V POWER RAILS
+            </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left font-mono text-xs">
-              <thead className="text-slate-400 border-b border-slate-800 bg-slate-950/60">
+              <thead className="text-stone-500 border-b border-[#dfceb8] bg-[#f5f0e5]">
                 <tr>
                   <th className="p-3">SENSOR / MODULE</th>
                   <th className="p-3">ESP32 PINS</th>
@@ -314,27 +309,17 @@ Detection completed. Outputs saved to runs/detect/resqer_inspection`}
                   <th className="p-3">ROLE IN SENSOR FUSION</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-[#ede4d3]">
                 {WIRING_PINOUT_GUIDE.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-slate-800/30 transition">
-                    <td className="p-3 font-bold text-amber-400">{row.module}</td>
-                    <td className="p-3 text-cyan-300">{row.esp32Pin}</td>
-                    <td className="p-3 text-slate-300">{row.power}</td>
-                    <td className="p-3 text-slate-300 font-sans text-[11px]">{row.purpose}</td>
+                  <tr key={idx} className="hover:bg-[#fbf9f5] transition">
+                    <td className="p-3 font-bold text-stone-900">{row.module}</td>
+                    <td className="p-3 text-red-700 font-bold">{row.esp32Pin}</td>
+                    <td className="p-3 text-stone-700">{row.power}</td>
+                    <td className="p-3 text-stone-600 font-sans text-[11px]">{row.purpose}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-
-          <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 text-xs text-purple-200 space-y-1">
-            <div className="font-bold flex items-center gap-1.5 text-purple-400 font-mono">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>HARDWARE DEMO TIP FOR TOMORROW'S EXPO</span>
-            </div>
-            <p className="font-sans leading-relaxed">
-              If showing the physical rover to judges, tap or shake the MPU6050 board gently with your finger. The live oscilloscope on this screen will instantly trigger the <strong>+3.4G Shock Spike</strong> indicator, demonstrating real-time hardware-in-the-loop sensor fusion!
-            </p>
           </div>
         </div>
       )}

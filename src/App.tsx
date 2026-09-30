@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LiveRoverConsole } from './components/LiveRoverConsole';
 import { InteractiveMap } from './components/InteractiveMap';
@@ -13,6 +14,7 @@ import { DEFAULT_WEIGHTS, calculateRiskScore, getSeverityTier, getRecommendedAct
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'console' | 'map' | 'risk_tuner' | 'predictive' | 'hardware'>('console');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [defects, setDefects] = useState<InfrastructureDNA[]>(INITIAL_DEFECTS);
   const [selectedDefect, setSelectedDefect] = useState<InfrastructureDNA>(INITIAL_DEFECTS[0]);
   const [riskWeights, setRiskWeights] = useState<RiskWeights>(DEFAULT_WEIGHTS);
@@ -45,59 +47,58 @@ export default function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       setRoverState((prev) => {
-        // Natural road vibration jitter around 1.0G
-        const jitterZ = 0.98 + (Math.random() * 0.08 - 0.04);
-        const jitterX = (Math.random() * 0.06 - 0.03);
-        const jitterY = (Math.random() * 0.06 - 0.03);
-
-        // Keep lat/lng drifting along Guindy corridor
-        const latDrift = prev.latitude + (Math.random() * 0.00004 - 0.00002);
-        const lngDrift = prev.longitude + (Math.random() * 0.00004 - 0.00002);
+        const jitter = (Math.random() - 0.5) * 0.08;
+        const driftLat = (Math.random() - 0.48) * 0.00008;
+        const driftLng = (Math.random() - 0.48) * 0.00008;
 
         return {
           ...prev,
-          latitude: latDrift,
-          longitude: lngDrift,
+          latitude: +(prev.latitude + driftLat).toFixed(6),
+          longitude: +(prev.longitude + driftLng).toFixed(6),
           current_mpu: {
-            ax: parseFloat(jitterX.toFixed(2)),
-            ay: parseFloat(jitterY.toFixed(2)),
-            az: parseFloat(jitterZ.toFixed(2)),
-            gx: parseFloat((Math.random() * 1.5 - 0.75).toFixed(1)),
-            gy: parseFloat((Math.random() * 1.5 - 0.75).toFixed(1)),
-            gz: parseFloat((Math.random() * 0.8 - 0.4).toFixed(1)),
+            ...prev.current_mpu,
+            ax: +(prev.current_mpu.ax + (Math.random() - 0.5) * 0.04).toFixed(2),
+            ay: +(prev.current_mpu.ay + (Math.random() - 0.5) * 0.04).toFixed(2),
+            az: +(1.0 + jitter).toFixed(2),
           },
         };
       });
-    }, 400);
+    }, 1200);
 
     return () => clearInterval(interval);
   }, []);
 
-  // Trigger high impact bump on MPU6050
+  // Handler for simulating physical bump shock (+3.42 G spike)
   const handleSimulateBump = () => {
     setRoverState((prev) => ({
       ...prev,
       current_mpu: {
         ...prev.current_mpu,
         az: 3.42,
+        ax: 0.45,
+        ay: -0.62,
         gx: 14.8,
-        gy: 8.4,
+        gy: -6.2,
       },
     }));
 
-    // Reset back to normal after shock dissipates
+    // Reset back to baseline after shock wave
     setTimeout(() => {
       setRoverState((prev) => ({
         ...prev,
         current_mpu: {
           ...prev.current_mpu,
           az: 1.02,
+          ax: 0.05,
+          ay: -0.08,
+          gx: 0.8,
+          gy: -0.4,
         },
       }));
-    }, 1200);
+    }, 1400);
   };
 
-  // Add new minted DNA
+  // Add new synthesized defect to state
   const handleNewDefectMinted = (newDNA: InfrastructureDNA) => {
     setDefects((prev) => [newDNA, ...prev]);
     setSelectedDefect(newDNA);
@@ -131,71 +132,97 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fbf9f5] text-stone-900 flex flex-col font-sans selection:bg-red-600 selection:text-white">
-      {/* Top Header & Telemetry Bar */}
-      <Header
+    <div className="min-h-screen bg-[#fbf9f5] text-stone-900 flex font-sans selection:bg-red-600 selection:text-white">
+      {/* Left-Side Dashboard Sidebar — matching res-qer.vercel.app with InfraSight prominent */}
+      <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         roverState={roverState}
         onSimulateBump={handleSimulateBump}
+        isOpenMobile={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
-        {/* Tab 1: Live Rover Console & YOLO Defect Ingest */}
-        {activeTab === 'console' && (
-          <div className="space-y-6">
-            <LiveRoverConsole
-              roverState={roverState}
-              onSimulateBump={handleSimulateBump}
-              onNewDefectMinted={handleNewDefectMinted}
-            />
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
+        {/* Top Header & Telemetry Bar */}
+        <Header
+          activeTab={activeTab}
+          roverState={roverState}
+          onSimulateBump={handleSimulateBump}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+        />
 
-            {/* Currently Active Defect DNA Inspection */}
-            <div className="pt-2">
-              <InfrastructureDNAViewer
-                defect={selectedDefect}
-                onUpdateStatus={handleUpdateStatus}
-                onOpenWorkOrder={(defect) => setWorkOrderDefect(defect)}
+        {/* Dynamic Page Views */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+          {/* Tab 1: Live Rover Console & YOLO Defect Ingest */}
+          {activeTab === 'console' && (
+            <div className="space-y-6">
+              <LiveRoverConsole
+                roverState={roverState}
+                onSimulateBump={handleSimulateBump}
+                onNewDefectMinted={handleNewDefectMinted}
               />
+
+              {/* Currently Active Defect DNA Inspection */}
+              <div className="pt-2">
+                <InfrastructureDNAViewer
+                  defect={selectedDefect}
+                  onUpdateStatus={handleUpdateStatus}
+                  onOpenWorkOrder={(defect) => setWorkOrderDefect(defect)}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Tab 2: Municipal Map & Infrastructure DNA Directory */}
-        {activeTab === 'map' && (
-          <div className="space-y-6">
-            <InteractiveMap
-              defects={defects}
-              onSelectDefect={(defect) => setSelectedDefect(defect)}
-              selectedDefect={selectedDefect}
-              roverLocation={{ lat: roverState.latitude, lng: roverState.longitude }}
+          {/* Tab 2: Leaflet Municipal Map & Infrastructure DNA Registry */}
+          {activeTab === 'map' && (
+            <div className="space-y-6">
+              <InteractiveMap
+                defects={defects}
+                onSelectDefect={(d) => setSelectedDefect(d)}
+                selectedDefect={selectedDefect}
+                roverLocation={{ lat: roverState.latitude, lng: roverState.longitude }}
+              />
+
+              {/* Defect DNA Details Section */}
+              <div className="pt-2">
+                <InfrastructureDNAViewer
+                  defect={selectedDefect}
+                  onUpdateStatus={handleUpdateStatus}
+                  onOpenWorkOrder={(defect) => setWorkOrderDefect(defect)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Tab 3: Dynamic Risk Engine Calibrator */}
+          {activeTab === 'risk_tuner' && (
+            <RiskEngineTuner
+              weights={riskWeights}
+              onUpdateWeights={(w) => setRiskWeights(w)}
+              onApplyToAll={handleApplyWeightsToAll}
             />
+          )}
 
-            {/* Detailed DNA View for Selected Defect */}
-            <InfrastructureDNAViewer
-              defect={selectedDefect}
-              onUpdateStatus={handleUpdateStatus}
-              onOpenWorkOrder={(defect) => setWorkOrderDefect(defect)}
-            />
+          {/* Tab 4: Predictive Analytics & Lifecycle Decay */}
+          {activeTab === 'predictive' && <PredictiveAnalytics />}
+
+          {/* Tab 5: Hardware & Python Code Hub */}
+          {activeTab === 'hardware' && <HardwareAndCodeHub />}
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-[#dfceb8] bg-[#f5f0e5] py-4 px-6 text-center text-xs font-mono text-stone-600">
+          <div className="flex flex-wrap items-center justify-between gap-3 max-w-7xl mx-auto">
+            <span className="font-bold text-stone-900 tracking-wide">
+              INFRASIGHT • AUTONOMOUS ROAD DEFECT AI
+            </span>
+            <span>Sensor Fusion: Camera (YOLOv11) + MPU6050 + GPS Neo-6M + HC-SR04</span>
+            <span className="text-red-700 font-bold">Powered by RESQER Platform</span>
           </div>
-        )}
-
-        {/* Tab 3: Dynamic Risk Engine Calibrator */}
-        {activeTab === 'risk_tuner' && (
-          <RiskEngineTuner
-            weights={riskWeights}
-            onUpdateWeights={setRiskWeights}
-            onApplyToAll={handleApplyWeightsToAll}
-          />
-        )}
-
-        {/* Tab 4: Predictive Deterioration & Municipal ROI */}
-        {activeTab === 'predictive' && <PredictiveAnalytics />}
-
-        {/* Tab 5: Hardware & Python AI Scripts Hub */}
-        {activeTab === 'hardware' && <HardwareAndCodeHub />}
-      </main>
+        </footer>
+      </div>
 
       {/* Municipal Work Order Printable Modal */}
       <WorkOrderModal
@@ -205,15 +232,6 @@ export default function App() {
           handleUpdateStatus(defectId, 'DISPATCHED');
         }}
       />
-
-      {/* Footer */}
-      <footer className="border-t border-[#dfceb8] bg-[#f5f0e5] py-4 px-6 text-center text-xs font-mono text-stone-600">
-        <div className="flex flex-wrap items-center justify-between gap-3 max-w-7xl mx-auto">
-          <span className="font-bold text-stone-900">RESQER INFRASIGHT • PROJECT EXPO 2026</span>
-          <span>Sensor Fusion: Camera (YOLOv11) + MPU6050 + GPS Neo-6M + HC-SR04</span>
-          <span className="text-red-700 font-bold">Autonomous Municipal Infrastructure Digital Twin</span>
-        </div>
-      </footer>
     </div>
   );
 }

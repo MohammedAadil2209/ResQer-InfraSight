@@ -35,6 +35,7 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
   const [showBoundingBoxes, setShowBoundingBoxes] = useState<boolean>(true);
   const [showOpticalHeatmap, setShowOpticalHeatmap] = useState<boolean>(false);
   const [mintNotification, setMintNotification] = useState<string | null>(null);
+  const [streamMode, setStreamMode] = useState<'live' | 'sample'>('live');
 
   // MPU6050 Waveform History
   const [waveformHistory, setWaveformHistory] = useState<number[]>([1.0, 1.02, 0.98, 1.01, 1.0, 1.03, 0.99, 1.01, 1.0]);
@@ -174,6 +175,7 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
     const reader = new FileReader();
     reader.onload = (event) => {
       setCustomImage(event.target?.result as string);
+      setStreamMode('sample');
       setIsInferring(true);
       setTimeout(() => {
         setIsInferring(false);
@@ -271,6 +273,31 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Feed Source Mode Switch */}
+                <div className="flex items-center bg-[#f5f0e5] p-0.5 rounded-lg border border-[#dfceb8] text-[11px] font-mono">
+                  <button
+                    onClick={() => setStreamMode('live')}
+                    className={`px-2.5 py-1 rounded transition flex items-center gap-1.5 font-bold ${
+                      streamMode === 'live'
+                        ? 'bg-red-600 text-white shadow-2xs'
+                        : 'text-stone-700 hover:text-stone-900'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    LIVE STREAM (8080)
+                  </button>
+                  <button
+                    onClick={() => setStreamMode('sample')}
+                    className={`px-2.5 py-1 rounded transition font-bold ${
+                      streamMode === 'sample'
+                        ? 'bg-red-600 text-white shadow-2xs'
+                        : 'text-stone-700 hover:text-stone-900'
+                    }`}
+                  >
+                    BENCH SAMPLES
+                  </button>
+                </div>
+
                 <button
                   onClick={() => setShowBoundingBoxes(!showBoundingBoxes)}
                   className={`px-2.5 py-1 rounded text-[11px] font-sans border transition ${
@@ -297,52 +324,75 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
               </div>
             </div>
 
-            {/* Video / Image Screen */}
-            <div className="relative mt-3 rounded-xl overflow-hidden bg-stone-900 border border-[#dfceb8] aspect-video flex items-center justify-center group shadow-inner">
-              <img
-                src={currentDisplayImage}
-                alt="Rover road feed"
-                className={`w-full h-full object-cover transition duration-300 ${
-                  showOpticalHeatmap ? 'contrast-150 saturate-200 hue-rotate-30' : ''
-                }`}
-              />
-
-              {/* Bounding Box Overlay */}
-              {showBoundingBoxes && (
-                <div
-                  className="absolute border-2 border-red-600 bg-red-600/20 rounded shadow-lg transition-all duration-300"
-                  style={{
-                    left: `${selectedSample.box.x}%`,
-                    top: `${selectedSample.box.y}%`,
-                    width: `${selectedSample.box.width}%`,
-                    height: `${selectedSample.box.height}%`,
+            {streamMode === 'live' ? (
+              /* Live Rover Camera Frame */
+              <div className="relative w-full h-[320px] bg-black rounded-lg overflow-hidden border border-gray-800 mt-3">
+                <img
+                  src="http://192.168.29.224:8080/video"
+                  alt="Rover Live Optical Feed"
+                  className={`w-full h-full object-cover ${
+                    showOpticalHeatmap ? 'contrast-150 saturate-200 hue-rotate-30' : ''
+                  }`}
+                  onError={(e) => {
+                    // Fallback if camera stream is disconnected
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/fallback_road.jpg";
                   }}
-                >
-                  {/* Bounding Box Tag */}
-                  <div className="absolute -top-7 left-0 px-2.5 py-0.5 bg-red-600 text-white font-mono text-[11px] font-bold rounded shadow-md whitespace-nowrap">
-                    <span className="uppercase">{currentType.replace('_', ' ')}</span>
-                    <span className="ml-1.5 opacity-90">
-                      {(currentConfidence * 100).toFixed(1)}%
-                    </span>
-                  </div>
+                />
+                
+                {/* Telemetry Overlay Banner */}
+                <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  LAT: 12.9257°N | LNG: 80.1005°E | SPEED: 18.5 KM/H
                 </div>
-              )}
-
-              {/* Telemetry HUD on Screen */}
-              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[11px] font-mono text-white bg-black/75 px-3 py-1.5 rounded-lg border border-white/20 backdrop-blur-md">
-                <div>LAT: {roverState.latitude.toFixed(4)}°N | LNG: {roverState.longitude.toFixed(4)}°E</div>
-                <div className="text-red-400 font-bold">{roverState.rover_speed_kmh.toFixed(1)} KM/H</div>
-                <div className="text-amber-300">INFERENCE: 18.2ms</div>
               </div>
+            ) : (
+              /* Video / Image Screen */
+              <div className="relative mt-3 rounded-xl overflow-hidden bg-stone-900 border border-[#dfceb8] aspect-video flex items-center justify-center group shadow-inner">
+                <img
+                  src={currentDisplayImage}
+                  alt="Rover road feed"
+                  className={`w-full h-full object-cover transition duration-300 ${
+                    showOpticalHeatmap ? 'contrast-150 saturate-200 hue-rotate-30' : ''
+                  }`}
+                />
 
-              {/* Inferring Flash Overlay */}
-              {isInferring && (
-                <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
-                  <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-mono text-white font-bold">Running YOLOv11 Neural Inference...</span>
+                {/* Bounding Box Overlay */}
+                {showBoundingBoxes && (
+                  <div
+                    className="absolute border-2 border-red-600 bg-red-600/20 rounded shadow-lg transition-all duration-300"
+                    style={{
+                      left: `${selectedSample.box.x}%`,
+                      top: `${selectedSample.box.y}%`,
+                      width: `${selectedSample.box.width}%`,
+                      height: `${selectedSample.box.height}%`,
+                    }}
+                  >
+                    {/* Bounding Box Tag */}
+                    <div className="absolute -top-7 left-0 px-2.5 py-0.5 bg-red-600 text-white font-mono text-[11px] font-bold rounded shadow-md whitespace-nowrap">
+                      <span className="uppercase">{currentType.replace('_', ' ')}</span>
+                      <span className="ml-1.5 opacity-90">
+                        {(currentConfidence * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Telemetry HUD on Screen */}
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[11px] font-mono text-white bg-black/75 px-3 py-1.5 rounded-lg border border-white/20 backdrop-blur-md">
+                  <div>LAT: {roverState.latitude.toFixed(4)}°N | LNG: {roverState.longitude.toFixed(4)}°E</div>
+                  <div className="text-red-400 font-bold">{roverState.rover_speed_kmh.toFixed(1)} KM/H</div>
+                  <div className="text-amber-300">INFERENCE: 18.2ms</div>
                 </div>
-              )}
-            </div>
+
+                {/* Inferring Flash Overlay */}
+                {isInferring && (
+                  <div className="absolute inset-0 bg-stone-950/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
+                    <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-mono text-white font-bold">Running YOLOv11 Neural Inference...</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Test Image Selector Strip */}
             <div className="mt-4 pt-3 border-t border-[#dfceb8] space-y-2">
@@ -371,9 +421,10 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
                     onClick={() => {
                       setSelectedSample(sample);
                       setCustomImage(null);
+                      setStreamMode('sample');
                     }}
                     className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
-                      selectedSample.id === sample.id && !customImage
+                      selectedSample.id === sample.id && !customImage && streamMode === 'sample'
                         ? 'bg-red-50/70 border-red-400 ring-2 ring-red-400/40 shadow-xs'
                         : 'bg-[#fbf9f5] border-[#dfceb8] hover:bg-white'
                     }`}

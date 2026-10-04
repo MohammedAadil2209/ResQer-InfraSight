@@ -17,6 +17,7 @@ import {
 import { InfrastructureDNA, RoverTelemetryState, DefectType } from '../types';
 import { SAMPLE_TEST_IMAGES } from '../data/mockDefects';
 import { calculateRiskScore, getSeverityTier, getRecommendedAction } from '../utils/riskEngine';
+import { captureAndInspectFrame } from '../utils/api';
 
 interface LiveRoverConsoleProps {
   roverState: RoverTelemetryState;
@@ -102,13 +103,20 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
     }
   }, [roverState.latitude, roverState.longitude]);
 
-  // Update waveform on MPU change
+  // Update waveform on MPU change - Calculate UPWARD vibration magnitude
   useEffect(() => {
+    const { ax, ay, az } = roverState.current_mpu;
+    const totalG = Math.sqrt(ax * ax + ay * ay + az * az);
+    const devG = Math.abs(totalG - 1.0);
+    const axisShock = Math.max(Math.abs(az - 1.0), Math.abs(ax) * 1.2, Math.abs(ay) * 1.2);
+    // Baseline is 1.0G; any vibration or shock spikes strictly UPWARD!
+    const vibrationValue = 1.0 + Math.max(devG, axisShock) * 1.8;
+
     setWaveformHistory((prev) => {
-      const next = [...prev.slice(-35), roverState.current_mpu.az];
+      const next = [...prev.slice(-35), vibrationValue];
       return next;
     });
-  }, [roverState.current_mpu.az]);
+  }, [roverState.current_mpu.ax, roverState.current_mpu.ay, roverState.current_mpu.az]);
 
   // Draw Oscilloscope Canvas
   useEffect(() => {
@@ -140,8 +148,8 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
       ctx.stroke();
     }
 
-    // Baseline (1.0G)
-    const baselineY = height * 0.65;
+    // Baseline (1.0G Static Rest) near lower third
+    const baselineY = height * 0.78;
     ctx.strokeStyle = '#44403c';
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -150,23 +158,36 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw Z-Axis Acceleration Waveform
+    // Draw Upward Vibration Waveform
     if (waveformHistory.length > 1) {
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = roverState.current_mpu.az > 2.0 ? '#dc2626' : '#16a34a';
-      ctx.beginPath();
+      const latestVal = waveformHistory[waveformHistory.length - 1] || 1.0;
+      const isHighVibration = latestVal > 1.6 || roverState.current_mpu.az > 1.8 || Math.abs(roverState.current_mpu.ax) > 0.4;
 
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = isHighVibration ? '#ef4444' : '#22c55e';
+      if (isHighVibration) {
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 8;
+      } else {
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.beginPath();
       const step = width / (waveformHistory.length - 1);
       waveformHistory.forEach((val, idx) => {
-        const normalized = (val - 0.5) / 3.5;
-        const y = height - (normalized * height * 0.85 + height * 0.1);
+        // Higher vibration = higher upward spike
+        const upwardSpike = Math.max(0, val - 1.0);
+        const spikePixels = Math.min(upwardSpike / 2.5, 1.0) * (baselineY - 10);
+        const y = baselineY - spikePixels;
         const x = idx * step;
         if (idx === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       });
       ctx.stroke();
+      ctx.shadowBlur = 0;
     }
-  }, [waveformHistory, roverState.current_mpu.az]);
+  }, [waveformHistory, roverState.current_mpu]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -184,9 +205,118 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const liveImgRef = useRef<HTMLImageElement | null>(null);
+
   const currentDisplayImage = customImage || selectedSample.url;
   const currentConfidence = selectedSample.expectedConfidence;
   const currentType = selectedSample.type as DefectType;
+
+  // Real Camera Snapshot & AI Inspection
+  const handleCaptureLiveFrame = async () => {
+    setIsCapturing(true);
+    try {
+      let imageBlob: Blob | null = null;
+
+      // 1. Try direct high-res snapshot from IP Webcam /shot.jpg
+      try {
+        const resp = await fetch('http://192.168.29.224:8080/shot.jpg');
+        if (resp.ok) {
+          imageBlob = await resp.blob();
+        }
+      } catch {
+        // Fallback to canvas
+      }
+
+      // 2. Try drawing from live image element
+      if (!imageBlob && liveImgRef.current) {
+        try {
+          const c = document.createElement('canvas');
+          c.width = liveImgRef.current.naturalWidth || 640;
+          c.height = liveImgRef.current.naturalHeight || 480;
+          const ctx = c.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(liveImgRef.current, 0, 0, c.width, c.height);
+            imageBlob = await new Promise<Blob | null>((resolve) => c.toBlob(resolve, 'image/jpeg', 0.85));
+          }
+        } catch {
+          // Fallback to sample
+        }
+      }
+
+      // 3. Fallback to current sample image
+      if (!imageBlob) {
+        const fallbackResp = await fetch(currentDisplayImage);
+        imageBlob = await fallbackResp.blob();
+      }
+
+      if (imageBlob) {
+        const res = await captureAndInspectFrame(
+          imageBlob,
+          roverState.latitude,
+          roverState.longitude,
+          roverState.current_mpu,
+          roverState.ultrasonic_cm,
+          true
+        );
+
+        if (res && res.infrastructure_dna && res.infrastructure_dna.length > 0) {
+          const item = res.infrastructure_dna[0];
+          const rawBreakdown = {
+            severity: item.severity === 'CRITICAL' ? 90 : 70,
+            traffic_exposure: 85,
+            population_exposure: 80,
+            safety_risk: item.severity === 'CRITICAL' ? 95 : 72,
+            deterioration: 75,
+          };
+          const newDNA: InfrastructureDNA = {
+            defect_id: item.defect_id,
+            type: item.type,
+            confidence: item.confidence > 1 ? item.confidence / 100 : item.confidence,
+            severity: item.severity,
+            latitude: item.latitude,
+            longitude: item.longitude,
+            location_name: item.location_name || 'Guindy Industrial Sector',
+            road_name: item.road_name || 'GST Corridor Patrol Lane',
+            traffic_exposure: item.traffic_exposure || 'HIGH',
+            deterioration: item.deterioration || 'RISING',
+            risk_score: item.risk_score || 85,
+            dimensions: item.dimensions || { length_cm: 65, width_cm: 50, depth_cm: 9.2 },
+            sensor_telemetry: {
+              accel_x_g: roverState.current_mpu.ax,
+              accel_y_g: roverState.current_mpu.ay,
+              accel_z_spike_g: roverState.current_mpu.az,
+              gyro_pitch_rate: 12.4,
+              gyro_roll_rate: -4.2,
+              ultrasonic_depth_cm: roverState.ultrasonic_cm,
+              rover_speed_kmh: roverState.rover_speed_kmh,
+              heading_deg: roverState.heading_deg,
+              timestamp: item.timestamp || new Date().toISOString(),
+            },
+            risk_breakdown: rawBreakdown,
+            recommended_action: item.recommended_action || 'Immediate road barrier and rapid asphalt repair crew dispatched.',
+            status: 'REPORTED',
+            detected_at: item.detected_at || new Date().toLocaleString(),
+            image_url: item.image_url || currentDisplayImage,
+            bounding_box: item.bounding_box || { x: 25, y: 30, width: 50, height: 40 },
+            work_order_id: item.work_order_id || `WO-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+            estimated_repair_cost_inr: item.estimated_repair_cost_inr || 4500,
+          };
+          onNewDefectMinted(newDNA);
+          setMintNotification(`Captured & Minted Infrastructure DNA #${item.defect_id}!`);
+          setTimeout(() => setMintNotification(null), 4000);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Direct capture failed, using synthesized pipeline:', err);
+    } finally {
+      setIsCapturing(false);
+    }
+
+    // Fallback: mint synthesized DNA
+    handleMintDNA();
+  };
 
   // Mint Infrastructure DNA from current view
   const handleMintDNA = () => {
@@ -201,6 +331,8 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
     const riskScore = calculateRiskScore(rawBreakdown);
     const severityTier = getSeverityTier(riskScore);
     const defectId = `INF-${Math.floor(10000 + Math.random() * 90000)}`;
+    const now = new Date();
+    const formattedDateTime = now.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) + ' • ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     const newDNA: InfrastructureDNA = {
       defect_id: defectId,
@@ -233,7 +365,7 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
       risk_breakdown: rawBreakdown,
       recommended_action: getRecommendedAction(riskScore, currentType),
       status: 'REPORTED',
-      detected_at: new Date().toLocaleTimeString(),
+      detected_at: formattedDateTime,
       image_url: currentDisplayImage,
       bounding_box: selectedSample.box,
       work_order_id: `WO-2026-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -326,8 +458,10 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
 
             {streamMode === 'live' ? (
               /* Live Rover Camera Frame */
-              <div className="relative w-full h-[320px] bg-black rounded-lg overflow-hidden border border-gray-800 mt-3">
+              <div className="relative w-full h-[320px] bg-black rounded-lg overflow-hidden border border-gray-800 mt-3 group">
                 <img
+                  ref={liveImgRef}
+                  crossOrigin="anonymous"
                   src="http://192.168.29.224:8080/video"
                   alt="Rover Live Optical Feed"
                   className={`w-full h-full object-cover ${
@@ -340,9 +474,24 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
                   }}
                 />
                 
-                {/* Telemetry Overlay Banner */}
-                <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                  LAT: 12.9257°N | LNG: 80.1005°E | SPEED: 18.5 KM/H
+                {/* Telemetry Overlay Banner with Live GPS */}
+                <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-xs text-white text-[11px] font-mono px-3 py-1.5 rounded-lg border border-white/20 flex items-center gap-3">
+                  <span className="text-emerald-400 font-bold">● LIVE GPS</span>
+                  <span>LAT: {roverState.latitude.toFixed(6)}°N</span>
+                  <span>LNG: {roverState.longitude.toFixed(6)}°E</span>
+                  <span className="text-stone-300">SPEED: {roverState.rover_speed_kmh.toFixed(1)} KM/H</span>
+                </div>
+
+                {/* Instant Live Capture Button */}
+                <div className="absolute top-3 right-3">
+                  <button
+                    onClick={handleCaptureLiveFrame}
+                    disabled={isCapturing}
+                    className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-mono text-xs font-bold shadow-xl flex items-center gap-2 transition active:scale-95 disabled:opacity-50 border border-white/20 cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>{isCapturing ? 'ANALYZING & MINTING...' : 'CAPTURE & REPORT DEFECT'}</span>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -451,11 +600,12 @@ export const LiveRoverConsole: React.FC<LiveRoverConsoleProps> = ({
               </div>
 
               <button
-                onClick={handleMintDNA}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition active:scale-95"
+                onClick={handleCaptureLiveFrame}
+                disabled={isCapturing}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
               >
-                <Dna className="w-4 h-4" />
-                <span>Synthesize Infrastructure DNA & Dispatch</span>
+                <Camera className="w-4 h-4" />
+                <span>{isCapturing ? 'Analyzing & Dispatching...' : 'Capture Frame & Synthesize DNA'}</span>
               </button>
             </div>
           </div>

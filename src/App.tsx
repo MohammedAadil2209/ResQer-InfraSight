@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LiveRoverConsole } from './components/LiveRoverConsole';
@@ -11,6 +11,7 @@ import { WorkOrderModal } from './components/WorkOrderModal';
 import { InfrastructureDNA, RoverTelemetryState, RiskWeights } from './types';
 import { INITIAL_DEFECTS } from './data/mockDefects';
 import { DEFAULT_WEIGHTS, calculateRiskScore, getSeverityTier, getRecommendedAction } from './utils/riskEngine';
+import { fetchLiveTelemetry, fetchDefects, syncLiveLocation } from './utils/api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'console' | 'map' | 'risk_tuner' | 'predictive' | 'hardware'>('console');
@@ -43,18 +44,42 @@ export default function App() {
     mode: 'AUTONOMOUS',
   });
 
-  // Simulated road vibration & slight rover drift
+  // 1. Live Device GPS (Where the user actually is)
+  const [hasDeviceGps, setHasDeviceGps] = useState(false);
+  const [hardwareLive, setHardwareLive] = useState(false);
+
   useEffect(() => {
+    if ('geolocation' in navigator) {
+      const geoId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = +pos.coords.latitude.toFixed(6);
+          const lng = +pos.coords.longitude.toFixed(6);
+          setHasDeviceGps(true);
+          setRoverState((prev) => ({
+            ...prev,
+            latitude: lat,
+            longitude: lng,
+          }));
+          syncLiveLocation(lat, lng);
+        },
+        (err) => {
+          console.warn('Browser GPS permission or signal pending:', err.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      );
+      return () => navigator.geolocation.clearWatch(geoId);
+    }
+  }, []);
+
+  // 2. Simulated road vibration & slight drift ONLY when offline / disconnected
+  useEffect(() => {
+    if (hardwareLive || hasDeviceGps) return; // Do not overwrite live hardware/device GPS!
+
     const interval = setInterval(() => {
       setRoverState((prev) => {
         const jitter = (Math.random() - 0.5) * 0.08;
-        const driftLat = (Math.random() - 0.48) * 0.00008;
-        const driftLng = (Math.random() - 0.48) * 0.00008;
-
         return {
           ...prev,
-          latitude: +(prev.latitude + driftLat).toFixed(6),
-          longitude: +(prev.longitude + driftLng).toFixed(6),
           current_mpu: {
             ...prev.current_mpu,
             ax: +(prev.current_mpu.ax + (Math.random() - 0.5) * 0.04).toFixed(2),
@@ -65,6 +90,119 @@ export default function App() {
       });
     }, 1200);
 
+    return () => clearInterval(interval);
+  }, [hardwareLive, hasDeviceGps]);
+
+  // 3. Poll live hardware telemetry from backend (ESP32 -> Backend -> Frontend)
+  useEffect(() => {
+    const pollTelemetry = async () => {
+      try {
+        const data = await fetchLiveTelemetry();
+        if (data && data.is_connected) {
+          setHardwareLive(true);
+          const t = data.telemetry;
+          setRoverState((prev) => ({
+            ...prev,
+            is_connected: true,
+            // Only overwrite GPS from ESP32 if ESP32 sends a real locked coordinate (> 0)
+            latitude: (t.latitude && t.latitude !== 0 && !hasDeviceGps) ? t.latitude : prev.latitude,
+            longitude: (t.longitude && t.longitude !== 0 && !hasDeviceGps) ? t.longitude : prev.longitude,
+            current_mpu: {
+              ...prev.current_mpu,
+              ax: t.ax,
+              ay: t.ay,
+              az: t.az,
+            },
+            ultrasonic_cm: t.depth_cm,
+            battery_pct: t.battery_pct,
+            heading_deg: t.heading_deg,
+            gps_satellites: t.gps_satellites,
+          }));
+        } else {
+          setHardwareLive(false);
+        }
+      } catch {
+        setHardwareLive(false);
+      }
+    };
+
+    const interval = setInterval(pollTelemetry, 1500);
+    pollTelemetry();
+    return () => clearInterval(interval);
+  }, [hasDeviceGps]);
+
+  // 4. Poll backend defects database so real camera captures appear immediately in the feed!
+  const lastTopDefectIdRef = useRef<string>('');
+  useEffect(() => {
+    const pollDefects = async () => {
+      try {
+        const backendDefects = await fetchDefects();
+        if (backendDefects && backendDefects.length > 0) {
+          const mapped: InfrastructureDNA[] = backendDefects.map((d: any) => {
+            const rawBreakdown = {
+              severity: d.severity === 'CRITICAL' ? 90 : 70,
+              traffic_exposure: 85,
+              population_exposure: 80,
+              safety_risk: d.severity === 'CRITICAL' ? 95 : 72,
+              deterioration: 75,
+            };
+            const riskScore = d.risk_score || calculateRiskScore(rawBreakdown);
+
+            // Format real date and time
+            const dateObj = d.timestamp ? new Date(d.timestamp) : new Date();
+            const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+            const formattedDate = d.detected_at || `${dateStr} • ${timeStr}`;
+
+            return {
+              defect_id: d.defect_id,
+              type: d.type as any,
+              confidence: d.confidence > 1 ? +(d.confidence / 100).toFixed(3) : +d.confidence.toFixed(3),
+              severity: d.severity as any,
+              latitude: d.latitude,
+              longitude: d.longitude,
+              location_name: d.location_name || 'Guindy Industrial Sector',
+              road_name: d.road_name || 'GST Corridor Patrol Lane',
+              traffic_exposure: d.traffic_exposure || 'HIGH',
+              deterioration: d.deterioration || 'RISING',
+              risk_score: riskScore,
+              dimensions: d.dimensions || { length_cm: 65, width_cm: 50, depth_cm: 9.2 },
+              sensor_telemetry: {
+                accel_x_g: d.sensor_telemetry?.accel_x_g ?? 0.05,
+                accel_y_g: d.sensor_telemetry?.accel_y_g ?? -0.08,
+                accel_z_spike_g: d.sensor_telemetry?.accel_z_spike_g ?? 1.02,
+                gyro_pitch_rate: 12.4,
+                gyro_roll_rate: -4.2,
+                ultrasonic_depth_cm: d.sensor_telemetry?.ultrasonic_depth_cm ?? 9.2,
+                rover_speed_kmh: 18.5,
+                heading_deg: 42,
+                timestamp: d.timestamp || new Date().toISOString(),
+              },
+              risk_breakdown: rawBreakdown,
+              recommended_action: d.recommended_action || d.action || getRecommendedAction(riskScore, d.type),
+              status: (d.status as any) || 'REPORTED',
+              detected_at: formattedDate,
+              image_url: d.image_url || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80',
+              bounding_box: d.bounding_box || { x: 25, y: 30, width: 50, height: 40 },
+              work_order_id: d.work_order_id || `WO-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+              estimated_repair_cost_inr: d.estimated_repair_cost_inr || (riskScore > 80 ? 5500 : 3200),
+            };
+          });
+
+          // If a new defect was minted/captured, automatically select it and make it prominent!
+          if (mapped.length > 0 && mapped[0].defect_id !== lastTopDefectIdRef.current) {
+            lastTopDefectIdRef.current = mapped[0].defect_id;
+            setSelectedDefect(mapped[0]);
+          }
+          setDefects(mapped);
+        }
+      } catch (err) {
+        // Fallback silently
+      }
+    };
+
+    pollDefects();
+    const interval = setInterval(pollDefects, 2000);
     return () => clearInterval(interval);
   }, []);
 

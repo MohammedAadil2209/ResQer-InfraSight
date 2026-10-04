@@ -1,0 +1,9 @@
+names:
+- pothole
+- road_crack
+- open_manhole
+- waterlogging
+nc: 4
+path: D:\projects\ResQer-InfraSight\scratch\test_train
+train: train/images
+val: val/images
